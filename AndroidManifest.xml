@@ -7,6 +7,8 @@
     <uses-sdk
         android:minSdkVersion="18"
         android:targetSdkVersion="18" />
+    
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -22,6 +24,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <meta-data android:name="com.crashlytics.ApiKey" android:value="2ba7ec48f8595d842568613fb5e5bf0495cf42e0"/>
     </application>
 
 </manifest>
