@@ -1,0 +1,23 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/layout_parent"
+    >
+
+    <RelativeLayout
+            android:id="@+id/rl_statusmonitor"
+            android:layout_width="320px"
+            android:layout_height="64px">
+    </RelativeLayout>
+
+    <ListView
+      android:id="@+id/band_list"
+      android:layout_below="@id/rl_statusmonitor"
+      android:layout_marginTop="10px"
+      android:orientation="vertical"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+            />
+
+</RelativeLayout>

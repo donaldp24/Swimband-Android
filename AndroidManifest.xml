@@ -9,21 +9,81 @@
         android:targetSdkVersion="18" />
     
     <uses-permission android:name="android.permission.INTERNET"/>
+    
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.READ_LOGS"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.GET_TASKS"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
+    <!-- Allows access to the flashlight -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.flash" />
+    <uses-feature android:name="android.hardware.camera" />
+
+    <!-- Allows access to the flashlight -->
+    <permission android:name="android.permission.FLASHLIGHT"
+                android:permissionGroup="android.permission-group.HARDWARE_CONTROLS"
+                android:protectionLevel="normal"
+                android:label="@string/permlab_flashlight"
+                android:description="@string/permdesc_flashlight" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+
         <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name" >
+                android:name=".SplashActivity"
+                android:label="@string/app_name"
+                android:screenOrientation="portrait"
+                android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+                >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/app_name" >
+        </activity>
+
+        <activity
+                android:name=".TermsActivity"
+                android:screenOrientation="portrait"
+                android:label="@string/terms_title" >
+        </activity>
+
+
+        <activity
+                android:name=".DetailActivity"
+                android:screenOrientation="portrait"
+                android:label="@string/terms_title" >
+        </activity>
+
+        <activity
+                android:name=".AlarmActivity"
+                android:screenOrientation="portrait"
+                android:label="@string/terms_title" >
+        </activity>
+
+        <receiver android:name=".Ble.BluetoothAdapterReceiver"
+                  android:exported="false">
+            <intent-filter>
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
         
         <meta-data android:name="com.crashlytics.ApiKey" android:value="2ba7ec48f8595d842568613fb5e5bf0495cf42e0"/>
     </application>

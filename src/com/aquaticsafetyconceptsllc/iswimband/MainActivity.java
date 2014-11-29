@@ -10,7 +10,6 @@ import android.app.FragmentTransaction;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,8 +39,7 @@ public class MainActivity extends Activity implements ActionBar.TabListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Crashlytics.start(this);
-        
+
         setContentView(R.layout.activity_main);
 
         // Set up the action bar.
@@ -79,9 +77,26 @@ public class MainActivity extends Activity implements ActionBar.TabListener {
                             .setText(mSectionsPagerAdapter.getPageTitle(i))
                             .setTabListener(this));
         }
+
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable ex) {
+                ex.printStackTrace();
+                thread.getDefaultUncaughtExceptionHandler().uncaughtException(thread, ex);
+            }
+        });
+
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
 
+        // set top activity
+        FlowManager.sharedInstance().setTopActivity(this);
+    }
+
+/* menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -100,7 +115,7 @@ public class MainActivity extends Activity implements ActionBar.TabListener {
         }
         return super.onOptionsItemSelected(item);
     }
-
+*/
     @Override
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
         // When the given tab is selected, switch to the corresponding page in
@@ -130,7 +145,13 @@ public class MainActivity extends Activity implements ActionBar.TabListener {
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
+            if (position == 0) {
+                return new ConnectedBandFragment();
+            } else if (position == 1) {
+                return new BandManagerFragment();
+            } else {
+                return PlaceholderFragment.newInstance(position + 1);
+            }
         }
 
         @Override
@@ -162,7 +183,7 @@ public class MainActivity extends Activity implements ActionBar.TabListener {
          * The fragment argument representing the section number for this
          * fragment.
          */
-        private static final String ARG_SECTION_NUMBER = "section_number";
+		private static final String ARG_SECTION_NUMBER = "section_number";
 
         /**
          * Returns a new instance of this fragment for the given section

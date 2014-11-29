@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="for_terms">#f0f0f0</color>
+    <color name="for_detailscreen_title">#939393</color>
+    <color name="for_detailscreen_value">#333333</color>
+    <color name="bluelight">#36A8DE</color>
+    <color name="white">#FFFFFF</color>
+
+
+</resources>

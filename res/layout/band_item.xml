@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="320px"
+              android:layout_height="51px"
+              >
+    <ImageView
+            android:tag="backgroundImage"
+            android:layout_marginLeft="4px"
+            android:layout_marginTop="4px"
+            android:layout_width="312px"
+            android:layout_height="44px"
+            android:background="@drawable/band_bar"
+            />
+    <RelativeLayout
+            android:layout_marginLeft="9px"
+            android:layout_marginTop="4px"
+            android:layout_width="302px"
+            android:layout_height="43px">
+        <ImageView
+                android:tag="statusAccessory"
+                android:layout_marginLeft="6px"
+                android:layout_marginTop="12px"
+                android:layout_width="20px"
+                android:layout_height="20px"
+                android:background="@drawable/greenlight_status"
+                />
+        <TextView
+                android:tag="name"
+                android:layout_width="164px"
+                android:layout_height="21px"
+                android:layout_marginLeft="38px"
+                android:layout_marginTop="13px"
+                android:text="Band Name"
+                android:textSize="13px"
+                />
+
+        <!--accessory container-->
+        <RelativeLayout android:layout_width="44px" android:layout_height="43px" android:layout_marginLeft="200px" android:layout_marginTop="0px">
+            <RelativeLayout android:tag="rssiAccessory" android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <RelativeLayout android:layout_width="32px" android:layout_height="22px" android:layout_marginLeft="6px" android:layout_marginTop="11px">
+                    <ImageView android:tag="rssiSignal" android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="@drawable/band_meter_0_4"/>
+                </RelativeLayout>
+            </RelativeLayout>
+
+            <RelativeLayout android:tag="rssiDisconnectedAccessory" android:layout_width="fill_parent" android:layout_height="fill_parent">
+            </RelativeLayout>
+
+            <RelativeLayout android:tag="wifiAccessory" android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <ImageView android:tag="wifiOnImage" android:layout_width="28px" android:layout_height="23px" android:layout_marginLeft="8px" android:layout_marginTop="9px" android:background="@drawable/wifi_on"/>
+            </RelativeLayout>
+
+            <RelativeLayout android:tag="wifiDisconnectedAccessory" android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <ImageView android:tag="wifiOffImage" android:layout_width="28px" android:layout_height="23px" android:layout_marginLeft="8px" android:layout_marginTop="9px" android:background="@drawable/wifi_off"/>
+            </RelativeLayout>
+
+            <RelativeLayout android:tag="otaUpdateAccessory" android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <ProgressBar android:layout_width="37px" android:layout_height="37px" android:layout_marginLeft="4px" android:layout_marginTop="2px"/>
+                <TextView android:tag="otaProgressLabel" android:layout_width="42px" android:layout_height="21px" android:layout_marginLeft="1px" android:layout_marginTop="10px" android:text="100%"/>
+            </RelativeLayout>
+
+            <RelativeLayout android:tag="connectingAccessory"
+                            android:layout_width="fill_parent"
+                            android:layout_height="fill_parent">
+                <ProgressBar android:layout_width="20px" android:layout_height="20px" android:layout_marginLeft="12px" android:layout_marginTop="11px"/>
+            </RelativeLayout>
+        </RelativeLayout>
+
+        <!-- battery accessory-->
+        <RelativeLayout android:tag="batteryAccessory"
+                        android:layout_width="11px"
+                        android:layout_height="22px"
+                        android:layout_marginLeft="252px"
+                        android:layout_marginTop="11px">
+
+            <RelativeLayout android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <ImageView android:tag="batteryLevel" android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="@drawable/band_battery_red"/>
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+        <!-- action accessory-->
+        <ImageView android:tag="actionAccessory"
+                   android:layout_width="18px"
+                   android:layout_height="18px"
+                   android:layout_marginLeft="280px"
+                   android:layout_marginTop="13px"
+                   android:background="@drawable/band_add"/>
+    </RelativeLayout>
+</RelativeLayout>

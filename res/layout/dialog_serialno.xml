@@ -1,0 +1,67 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="300px"
+                android:layout_height="320px"
+                android:background="@drawable/band_detail_background_blue"
+                android:id="@+id/layout_parent"
+        >
+
+    <TextView
+            android:layout_marginLeft="20px"
+            android:layout_marginTop="30px"
+            android:layout_width="260px"
+            android:layout_height="120px"
+            android:textSize="13px"
+            android:text="Please confirm ownership of this iSwimband by entering the id number located on the unit."
+            android:gravity="center_horizontal"
+            />
+
+    <TextView
+            android:id="@+id/text_name"
+            android:layout_marginLeft="20px"
+            android:layout_marginTop="150px"
+            android:layout_width="250px"
+            android:layout_height="30px"
+            android:textSize="15px"
+            android:text="iSwimband-002609"
+            />
+
+    <EditText
+            android:id="@+id/edit_serialno"
+            android:layout_below="@id/text_name"
+            android:layout_marginLeft="20px"
+            android:layout_width="250px"
+            android:layout_height="40px"
+            android:textSize="15px"
+            android:text="002609"
+            android:padding="4dp"
+            />
+
+    <Button
+            android:id="@+id/btn_cancel"
+            android:layout_marginLeft="15px"
+            android:layout_marginTop="230px"
+            android:layout_width="120px"
+            android:layout_height="30px"
+            android:background="@drawable/save_changes_button"
+            android:text="Cancel"
+            android:textColor="#ffffff"
+            android:textSize="12px"
+            android:padding="0dp"
+            />
+
+    <Button
+            android:id="@+id/btn_continue"
+            android:layout_toRightOf="@id/btn_cancel"
+            android:layout_marginLeft="15px"
+            android:layout_marginTop="230px"
+            android:layout_width="120px"
+            android:layout_height="30px"
+            android:background="@drawable/save_changes_button"
+            android:text="Continue"
+            android:textColor="#ffffff"
+            android:textSize="12px"
+            android:padding="0dp"
+            />
+
+</RelativeLayout>

@@ -1,0 +1,103 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="@android:color/black"
+    android:id="@+id/layout_parent"
+        >
+    <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_marginLeft="5px"
+            android:layout_marginRight="5px"
+            android:layout_marginTop="5px"
+            android:id="@+id/rlGallery"
+            >
+        <view android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              class="com.aquaticsafetyconceptsllc.iswimband.HorizontalPager"
+              android:id="@+id/rlTerms"
+              android:layout_centerVertical="true"
+              android:layout_centerHorizontal="true"
+                />
+
+        <RelativeLayout
+                android:id="@+id/rlFirst"
+                android:layout_width="fill_parent" android:layout_height="fill_parent">
+            <TextView
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:text="By using the [System] the user acknowledges and agrees that it is designed soley to:\n(i) monitor electronically the immersion of monitored persons in the water in order to signal that a moment has ccurred when a monitored persion may be at risk of drowning,\n(ii) to assist responsible adults supervising monitored persons in or near the water, and \n(iii) the [System] is not itself a life saving device and cannot alone prevent drowning.\n - Wahooo iSwimband is a submersion timer \n - Wahooo iSwimband is not a supervisor \n - Wahooo iSwimband is not a life-saving device"
+                    android:padding="5dp"
+                    android:textSize="14px"
+                    android:textColor="@color/for_terms"
+                    />
+        </RelativeLayout>
+
+        <RelativeLayout
+                android:id="@+id/rlSecond"
+                android:layout_width="fill_parent" android:layout_height="fill_parent">
+            <TextView
+                    android:layout_width="fill_parent"
+                    android:layout_height="80px"
+                    android:text="Ensure that your device is not in vibrate mode"
+                    android:padding="5dp"
+                    android:textSize="14px"
+                    android:textColor="@color/for_terms"
+                    />
+            <Button
+                    android:id="@+id/btnTestVolume"
+                    android:layout_marginTop="320px"
+                    android:layout_width="171px"
+                    android:layout_height="30px"
+                    android:background="@drawable/save_changes_button"
+                    android:text="@string/btntitle_test_volume"
+                    android:textColor="@color/for_terms"
+                    android:textSize="12px"
+                    android:padding="0dp"
+                    android:layout_centerHorizontal="true"
+                    />
+        </RelativeLayout>
+
+        <RelativeLayout
+                android:id="@+id/rlThird"
+                android:layout_width="fill_parent" android:layout_height="fill_parent" android:visibility="visible">
+            <TextView
+                    android:id="@+id/text_ensurenotification"
+                    android:layout_width="fill_parent"
+                    android:layout_height="80px"
+                    android:text="Ensure that notifications are turned on in the Notification Center."
+                    android:textSize="14px"
+                    android:padding="5dp"
+                    android:textColor="@color/for_terms"
+                    />
+            <TextView
+                    android:layout_below="@id/text_ensurenotification"
+                    android:layout_width="fill_parent"
+                    android:layout_height="80px"
+                    android:text="Ensure that Bluetooth is turned on in your device's settings"
+                    android:textSize="14px"
+                    android:padding="5dp"
+                    android:textColor="@color/for_terms"
+                    />
+            <Button
+                    android:id="@+id/btnAgree"
+                    android:layout_marginTop="320px"
+                    android:layout_width="171px"
+                    android:layout_height="30px"
+                    android:background="@drawable/save_changes_button"
+                    android:text="Agree"
+                    android:textColor="#ffffff"
+                    android:textSize="12px"
+                    android:padding="0dp"
+                    android:layout_centerHorizontal="true"/>
+        </RelativeLayout>
+
+
+    </RelativeLayout>
+
+</RelativeLayout>
