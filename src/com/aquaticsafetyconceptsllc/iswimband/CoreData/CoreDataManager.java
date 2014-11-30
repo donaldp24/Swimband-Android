@@ -117,4 +117,55 @@ public class CoreDataManager {
         }
         return false;
     }
+
+    public String getDeviceSerialNo(String address) {
+        String sql = String.format("SELECT * FROM tbl_serialno WHERE address = '%s'", address);
+        Cursor results = dbManager.executeCommand(sql);
+        if (results.moveToFirst()) {
+            do {
+                String serialNo = results.getString(1);
+                return serialNo;
+            } while (false);
+        }
+        return null;
+    }
+
+    public void saveDeviceSerialNo(String address, String serialNo) {
+        Logger.log("saveDeviceSerialNo - %s", serialNo);
+        if (isExistSerialNo(address)) {
+            String sql = String.format("UPDATE tbl_serialno SET serialno = '%s' WHERE address = '%s'",
+                    serialNo,
+                    address);
+            dbManager.executeUpdate(sql);
+        }
+        else {
+            ContentValues values = new ContentValues();
+            values.put("address", address);
+            values.put("serialNo", serialNo);
+            long ret = dbManager.insert("tbl_serialno", null, values);
+            if (ret < 0) {
+                //return 0;
+                Logger.log("added serialno failed");
+            }
+            else {
+                //return ret;
+                Logger.log("added serialno success");
+            }
+        }
+    }
+
+    public boolean isExistSerialNo(String address) {
+        String sql = String.format("SELECT COUNT(*) AS samecount FROM tbl_serialno WHERE address = '%s'", address);
+        Cursor results = dbManager.executeCommand(sql);
+        if (results.moveToFirst())
+        {
+            do  {
+                int count       = results.getInt(0); //[results intForColumn:@"samecount"];
+                if (count > 0)
+                    return true;
+                return false;
+            } while (false);
+        }
+        return false;
+    }
 }

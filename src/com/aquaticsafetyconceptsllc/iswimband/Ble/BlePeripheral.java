@@ -3,6 +3,7 @@ package com.aquaticsafetyconceptsllc.iswimband.Ble;
 import java.util.List;
 import java.util.UUID;
 
+import com.aquaticsafetyconceptsllc.iswimband.CoreData.CoreDataManager;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 
 import android.bluetooth.BluetoothAdapter;
@@ -12,7 +13,6 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
@@ -24,6 +24,7 @@ public class BlePeripheral {
     private int mConnectionState = STATE_DISCONNECTED;
     private BluetoothDevice mBluetoothDevice;
     private int _rssi;
+    public long scannedTime;
     
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTING = 1;
@@ -32,6 +33,7 @@ public class BlePeripheral {
     public BlePeripheralDelegate delegate;
     
     private String mAddress;
+    private String _name;
 
     
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
@@ -102,6 +104,8 @@ public class BlePeripheral {
         this.mBluetoothDevice = null;
     	this.mAddress = address;
 
+        this.scannedTime = System.currentTimeMillis();
+
         mBluetoothAdapter = BleManager.sharedInstance().bluetoothAdapter();
         if (mBluetoothAdapter == null) {
             Logger.log("BlePeripheral(%s) - blemanager.bluetoothadapter is null", address);
@@ -113,6 +117,12 @@ public class BlePeripheral {
             Logger.log("BlePeripheral(%s) - bluetoothadapter.getremotedevice is null", address);
             return;
         }
+
+        String serialno = CoreDataManager.sharedInstance().getDeviceSerialNo(mAddress);
+        if (serialno == null)
+            this._name = this.mBluetoothDevice.getName();
+        else
+            this._name = getNameWithSerialNo(serialno);
     }
 
     /**
@@ -235,11 +245,14 @@ public class BlePeripheral {
 
         return mBluetoothGatt.getServices();
     }
-    
+
     public String name() {
-        if (mBluetoothDevice == null)
-            return null;
-    	return mBluetoothDevice.getName();
+        return _name;
+    }
+
+    public void setSerialNo(String serialNo) {
+        _name = getNameWithSerialNo(serialNo);
+        CoreDataManager.sharedInstance().saveDeviceSerialNo(mAddress, serialNo);
     }
 
     public String address() {
@@ -253,5 +266,9 @@ public class BlePeripheral {
     public void updateRSSI() {
         if (mConnectionState == STATE_CONNECTED)
             mBluetoothGatt.readRemoteRssi();
+    }
+
+    protected String getNameWithSerialNo(String serialno) {
+        return String.format("iSwimband-%s", serialno);
     }
 }

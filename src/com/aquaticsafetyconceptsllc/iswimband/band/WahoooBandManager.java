@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class WahoooBandManager {
 
-	public static final int ADVERTISE_TIME_OUT = 12;
+	public static final int ADVERTISE_TIME_OUT = 20;
 	public static final String UUID_BANDSERVICE = "EBEA0000-473C-48F7-AEBA-3C9CB39C1A31";
 
 	public static final String kBandManagerAdvertisingBandsChangedNotification = "kBandManagerAdvertisingBandsChangedNotification";
@@ -285,7 +285,7 @@ public class WahoooBandManager {
 	}
 
 	protected void _undiscoveredPeripheral(BlePeripheral peripheral) {
-		/*
+
 		ArrayList<WahoooBand> removingList = new ArrayList<WahoooBand>();
 		for (WahoooBand band : advertisingBands) {
 			PeripheralBand peripheralBand = (PeripheralBand) band;
@@ -299,7 +299,6 @@ public class WahoooBandManager {
 			//[[NSNotificationCenter defaultCenter] postNotificationName:kBandManagerAdvertisingBandsChangedNotification object:self];
 			EventBus.getDefault().post(new SEvent(kBandManagerAdvertisingBandsChangedNotification, this));
 		}
-		*/
 	}
 
 	protected void _connectedPeripheral(BlePeripheral peripheral)  {

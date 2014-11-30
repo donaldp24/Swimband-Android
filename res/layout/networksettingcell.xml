@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="320px"
+              android:layout_height="128px"
+        >
+
+    <ImageView android:layout_width="312px" android:layout_height="120px" android:layout_marginLeft="4px" android:layout_marginTop="4px" android:background="@drawable/band_bar"/>
+
+    <RelativeLayout android:layout_marginLeft="20px" android:layout_marginTop="0px" android:layout_width="280px" android:layout_height="127px">
+        <TextView
+                android:id="@+id/text_devicename"
+                android:layout_marginLeft="0px"
+                android:layout_marginTop="20px"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Device Name"
+                android:textSize="13px"
+                />
+        <ImageView
+                android:id="@+id/image_fordevicename"
+                android:layout_width="280px" android:layout_height="30px"
+                android:layout_marginLeft="0px"
+                android:layout_marginTop="45px"
+                android:background="@drawable/segment_not_selected"/>
+        <EditText
+                android:id="@+id/edit_devicename"
+                android:layout_marginLeft="0px"
+                android:layout_marginTop="45px"
+                android:layout_width="280px"
+                android:layout_height="30px"
+                android:text="Device Name"
+                android:textSize="13px"
+                android:padding="3dp"
+                />
+        <TextView
+                android:id="@+id/text_networksharing"
+                android:layout_marginLeft="0px"
+                android:layout_marginTop="86px"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Network Sharing"
+                android:textSize="13px"
+                />
+        <Switch
+                android:id="@+id/switch_sharing"
+                android:layout_marginLeft="175px"
+                android:layout_marginTop="81px"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="On"
+                android:textOff="Off"
+                />
+    </RelativeLayout>
+</RelativeLayout>

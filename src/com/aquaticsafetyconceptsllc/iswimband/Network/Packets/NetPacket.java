@@ -200,7 +200,7 @@ public class NetPacket {
 
 	// Only call this from child class
 	protected byte[] _pack() {
-		return null;
+		return new byte[0];
 	}
 	
 	// Only call this from child class

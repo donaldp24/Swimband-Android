@@ -33,6 +33,11 @@ public class NetManager implements NetConnectionDelegate, NetServerDelegate, Net
 	
 	private String _serviceName;
 	private String _serviceID;
+
+	public String serviceName() { return _serviceName; }
+	public void setServiceName(String name) { _serviceName = name; }
+	public String serviceID() { return _serviceID; }
+	public void setServiceID(String serviceID) { _serviceID = serviceID; }
 	
 	private Boolean _sharing;
 
@@ -94,6 +99,38 @@ public class NetManager implements NetConnectionDelegate, NetServerDelegate, Net
 	public void stopBrowser() {
 		mNsdHelper.stopDiscovery();
 	}
+
+
+	public void stopSharing() {
+		NetPacket packet = new NetPacket(PacketType.kPacketType_ServerStoppedSharing);
+		byte[] packetData = packet.pack();
+
+		ArrayList<NetConnection> serverConnections = new ArrayList<NetConnection>();
+		serverConnections.addAll(_serverConnections);
+
+		for ( NetConnection connection : serverConnections ) {
+			connection.writeData(packetData);
+			closeConnection(connection);
+		}
+
+		packet = new NetPacket(PacketType.kPacketType_ClientStoppedObserving);
+		packetData = packet.pack();
+
+		ArrayList<NetConnection> clientConnections = new ArrayList<NetConnection>();
+		serverConnections.addAll(_clientConnections);
+
+		for( NetConnection connection : clientConnections ) {
+			connection.writeData(packetData);
+
+			closeConnection(connection);
+		}
+
+		stopBrowser();
+		stopServer();
+
+		//[[WahoooDeviceManager sharedManager] clearDevices];
+
+	}
 	
 	public Boolean connectToService(NsdServiceInfo service) {
 		if (service != null) {
@@ -116,7 +153,7 @@ public class NetManager implements NetConnectionDelegate, NetServerDelegate, Net
 		        packet.setClientName(_serviceName);
 		        packet.setClientID(_serviceID);
 		        
-		        connection.sendMessage(packet.pack());
+		        connection.writeData(packet.pack());
 		        
 		        _fireUpdateNotification();
 
@@ -132,16 +169,65 @@ public class NetManager implements NetConnectionDelegate, NetServerDelegate, Net
             return false;
         }
 	}
+
+	public boolean openConnectionToService(String serviceName) {
+		NsdServiceInfo service = null;
+
+		ArrayList<NsdServiceInfo> services = mNsdHelper._services;
+
+		for( NsdServiceInfo current : services ) {
+			if ( current.getServiceName().equals(serviceName) ) {
+				service = current;
+				break;
+			}
+		}
+
+		if ( service == null ) {
+			return false;
+		}
+
+		for( NetConnection currentConnection : _clientConnections )
+		{
+			if ( currentConnection.serviceName().equals(serviceName) ) {
+				_availableServices.remove(service);
+				return false;
+			}
+		}
+
+		NetConnection connection = new NetConnection(service);
+		connection.state = ConnectionState.kClientState_Connecting;
+
+		if ( connection.connectToServer())
+		{
+			connection.delegate = this;
+
+			_clientConnections.add(connection);
+			_availableServices.remove(service);
+			connection.state = ConnectionState.kClientState_WaitingForApproval;
+
+			ClientConnectRequestPacket packet = new ClientConnectRequestPacket();
+			packet.setClientName(_serviceName);
+			packet.setClientID(_serviceID);
+
+			connection.writeData(packet.pack());
+
+			_fireUpdateNotification();
+
+			return true;
+		}
+
+		return false;
+	}
 	
 	public void closeConnection(NetConnection connection) {
 		if (_serverConnections.contains(connection)) {
 			NetPacket packet = new NetPacket(PacketType.kPacketType_ServerStoppedSharing);
 			byte[] packetData = packet.pack();
-			connection.sendMessage(packetData);
+			connection.writeData(packetData);
 		} else if (_clientConnections.contains(connection)) {
 			NetPacket packet = new NetPacket(PacketType.kPacketType_ClientStoppedObserving);
 			byte[] packetData = packet.pack();
-			connection.sendMessage(packetData);
+			connection.writeData(packetData);
 		}
 		connection.tearDown();
 

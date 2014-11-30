@@ -89,16 +89,19 @@ public class NetConnection {
         mChatClient.tearDown();
     }
 
-    public void connectToServer() {
+    public boolean connectToServer() {
+        if (mSocket == null)
+            return false;
         mChatClient = new ChatClient();
+        return true;
     }
 
-    public void sendMessage(byte[] msg) {
-        if (mChatClient != null) {
-            mChatClient.sendMessage(msg);
-        }
+    public void writeData(byte[] data) {
+        if (mChatClient != null)
+            mChatClient.addSendMessage(data);
     }
-    
+
+
     public int getLocalPort() {
         return mPort;
     }
@@ -162,21 +165,28 @@ public class NetConnection {
         private Thread mSendThread;
         private Thread mRecThread;
 
+        BlockingQueue<byte[]> mMessageQueue;
+        private int QUEUE_CAPACITY = 10;
+
+
+
         public ChatClient() {
 
             Logger.logDebug("Creating chatClient");
+
+            mMessageQueue = new ArrayBlockingQueue<byte[]>(QUEUE_CAPACITY);
 
             mSendThread = new Thread(new SendingThread());
             mSendThread.start();
         }
 
+        public void addSendMessage(byte[] msg) {
+            mMessageQueue.add(msg);
+        }
+
         class SendingThread implements Runnable {
-
-            BlockingQueue<byte[]> mMessageQueue;
-            private int QUEUE_CAPACITY = 10;
-
             public SendingThread() {
-                mMessageQueue = new ArrayBlockingQueue<byte[]>(QUEUE_CAPACITY);
+
             }
 
             @Override
@@ -198,10 +208,13 @@ public class NetConnection {
                         byte[] msg = mMessageQueue.take();
                         sendMessage(msg);
                     } catch (InterruptedException ie) {
-                        Logger.logDebug("Message sending loop interrupted, exiting");
+                        Logger.logDebug("Message sending loop interrupted, exit");
+                        break;
                     }
                 }
             }
+
+
         }
 
         class ReceivingThread implements Runnable {
@@ -243,7 +256,7 @@ public class NetConnection {
             }
         }
 
-        public void sendMessage(byte[] msg) {
+        protected void sendMessage(byte[] msg) {
             try {
                 Socket socket = getSocket();
                 if (socket == null) {

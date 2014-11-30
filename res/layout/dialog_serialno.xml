@@ -33,7 +33,8 @@
             android:layout_width="250px"
             android:layout_height="40px"
             android:textSize="15px"
-            android:text="002609"
+            android:text=""
+            android:hint="Please input serial number"
             android:padding="4dp"
             />
 

@@ -124,7 +124,10 @@ public class PeripheralBand extends WahoooBand {
                     }
 
                     serialNumber = cleanedkey;
+                    serialNumber = serialNumber.toUpperCase();
                     Logger.log("read serial number : %s", serialNumber);
+
+                    _peripheral.setSerialNo(serialNumber);
 
 
                     // start validation - it is called in authenticationCompleteForiDevicesService on iOS,
@@ -252,6 +255,8 @@ public class PeripheralBand extends WahoooBand {
     
     boolean				_restoredFromPeripheral;
 
+    private         Handler validationHandler = new Handler();
+
     public SwimbandData bandData() {
         return _bandData;
     }
@@ -304,7 +309,8 @@ public class PeripheralBand extends WahoooBand {
 
     public String displayName() {
         if ( _peripheral != null && (_name == null || _name.length() == 0) ) {
-            return _peripheral.name();
+            String tempname = _peripheral.name();
+            return tempname;
         }
 
         return _name;
@@ -1086,8 +1092,7 @@ public class PeripheralBand extends WahoooBand {
         Logger.log("_startFirmwareValidation : (%s)", address());
         if (_perphState == PeripheralBandState.kPeripheralBandState_ValidatingKey ) {
             _perphState = PeripheralBandState.kPeripheralBandState_ValidatingFirmware;
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
+            validationHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     _validateFirmware();

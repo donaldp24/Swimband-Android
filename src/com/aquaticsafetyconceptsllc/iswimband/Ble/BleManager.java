@@ -89,7 +89,6 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
     protected Context mContext;
 
     protected ArrayList<BlePeripheral> scannedPeripherals;
-    protected HashMap<BlePeripheral, Long> peripheralScannedTime;
     protected ArrayList<UUID> services;
     protected boolean mScanStarted;
 
@@ -119,7 +118,6 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
         BleScanner.initialize(context);
 
         scannedPeripherals = new ArrayList<BlePeripheral>();
-        peripheralScannedTime = new HashMap<BlePeripheral, Long>();
         mScanStarted = false;
     }
 
@@ -169,7 +167,6 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
 
     public void scanForPeripheralsWithServices(ArrayList<UUID> services, boolean allowDuplicates) {
         scannedPeripherals.clear();
-        peripheralScannedTime.clear();
         this.services = services;
 
         BleScanner.sharedInstance().listner = this;
@@ -200,12 +197,12 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
             }
 
             if (existPeripheral != null) {
-                peripheralScannedTime.put(existPeripheral, currentTime);
+                existPeripheral.scannedTime = currentTime;
             } else {
                 existPeripheral = new BlePeripheral(mContext, device.getAddress());
                 existPeripheral.delegate = this;
                 list.add(existPeripheral);
-                peripheralScannedTime.put(existPeripheral, currentTime);
+                existPeripheral.scannedTime = currentTime;
             }
         }
 
@@ -253,7 +250,7 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
             Iterator i = list.iterator(); // Must be in synchronized block
             while (i.hasNext()) {
                 BlePeripheral peripheral = (BlePeripheral)i.next();
-                Long scannedTime = peripheralScannedTime.get(peripheral);
+                Long scannedTime = peripheral.scannedTime;
                 if (scannedTime != null && (currentTime - scannedTime) >= TimeUnit.SECONDS.toMillis(duration)) {
                     purgingDevices.add(peripheral);
                 }

@@ -20,9 +20,9 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         try {
             String sql_swimbanddata = "CREATE TABLE tbl_swimbanddata(bandId TEXT PRIMARY KEY, warningTime INTEGER, alarmTime INTEGER, alarmType INTEGER, authKey TEXT, name TEXT, firstTime INTEGER, disconnectTime REAL);";
-
+            String sql_serialno = "CREATE TABLE tbl_serialno(address TEXT PRIMARY KEY, serialno TEXT)";
             db.execSQL(sql_swimbanddata);
-
+            db.execSQL(sql_serialno);
         } catch (Exception e) {
             Logger.log("exception in db creating : " + e.getMessage());
         }

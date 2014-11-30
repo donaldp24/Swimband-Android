@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="320px"
+              android:layout_height="43px"
+              >
+    <ImageView
+            android:tag="backgroundImage"
+            android:layout_marginLeft="4px"
+            android:layout_marginTop="4px"
+            android:layout_width="312px"
+            android:layout_height="36px"
+            android:background="@drawable/band_bar"
+            />
+
+    <TextView
+            android:tag="name"
+            android:layout_width="254px"
+            android:layout_height="21px"
+            android:layout_marginLeft="20px"
+            android:layout_marginTop="11px"
+            android:text="Band Name"
+            android:textSize="13px"
+            />
+
+    <!-- action accessory-->
+    <ImageView android:tag="actionAdd"
+               android:layout_width="18px"
+               android:layout_height="18px"
+               android:layout_marginLeft="282px"
+               android:layout_marginTop="13px"
+               android:background="@drawable/band_add"/>
+
+    <ImageView android:tag="actionRemove"
+               android:layout_width="18px"
+               android:layout_height="18px"
+               android:layout_marginLeft="282px"
+               android:layout_marginTop="13px"
+               android:background="@drawable/band_delete"
+               android:visibility="invisible"
+            />
+
+</RelativeLayout>
