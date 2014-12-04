@@ -15,6 +15,7 @@ import com.aquaticsafetyconceptsllc.iswimband.CoreData.CoreDataManager;
 import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
 import com.aquaticsafetyconceptsllc.iswimband.Network.NetManager;
 import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
+import com.aquaticsafetyconceptsllc.iswimband.Utils.ScheduleNotificationManager;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Settings;
 import com.aquaticsafetyconceptsllc.iswimband.band.WahoooBandManager;
 import com.crashlytics.android.Crashlytics;
@@ -75,6 +76,7 @@ public class SplashActivity extends Activity {
         FlowManager.initialize(getApplicationContext());
         Settings.initialize(getApplicationContext());
         NetManager.initialize(getApplicationContext());
+        ScheduleNotificationManager.initialize(getApplicationContext());
 
         // start scan
         WahoooBandManager.initialize(getApplicationContext());

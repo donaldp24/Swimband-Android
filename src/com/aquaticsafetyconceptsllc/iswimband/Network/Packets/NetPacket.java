@@ -14,8 +14,7 @@ public class NetPacket {
 	public static short NETPACKET_VERSION_1_0 = 1;
 	public static short NETPACKET_HEADER_CURRENT_VERSION = NETPACKET_VERSION_1_0;
 	
-	public enum PacketType
-	{
+	public enum PacketType {
 	    kPacketType_ClientConnectRequest(1),
 	    
 	    kPacketType_ServerConnectResponse(0x1000),

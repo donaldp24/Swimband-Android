@@ -42,6 +42,24 @@ public class WahoooBand {
 	    		return true;
 	    	return false;
 	    }
+
+		public static WahoooBandState_t fromInt(int state) {
+			if (state == 0)
+				return kWahoooBandState_NotConnected;
+			else if (state == 1)
+				return kWahoooBandState_OutOfRange;
+			else if (state == 2)
+				return kWahoooBandState_Caution;
+			else if (state == 3)
+				return kWahoooBandState_Alarm;
+			else if (state == 4)
+				return kWahoooBandState_Connecting;
+			else if (state == 5)
+				return kWahoooBandState_Connected;
+			else if (state == 6)
+				return kWahoooBandState_OTAUpgrade;
+			return kWahoooBandState_NotConnected;
+		}
 	    
 	}
 	
@@ -108,6 +126,10 @@ public class WahoooBand {
 
 	public WahoooBandState_t bandState() {
 		return _bandState;
+	}
+
+	public void setBatteryLevel(int level) {
+		_batteryLevel = level;
 	}
 	
 	public String fwVersion() {

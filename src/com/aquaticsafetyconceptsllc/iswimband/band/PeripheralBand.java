@@ -14,6 +14,8 @@ import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.OSDate;
 
+import com.aquaticsafetyconceptsllc.iswimband.Utils.ScheduleNotification;
+import com.aquaticsafetyconceptsllc.iswimband.Utils.ScheduleNotificationManager;
 import de.greenrobot.event.EventBus;
 
 public class PeripheralBand extends WahoooBand {
@@ -33,6 +35,8 @@ public class PeripheralBand extends WahoooBand {
 
 	public static final int kAuthSize = 16;
 
+    private static final int READCHARACTERISTIC_INTERVAL = 100;
+
 
 	public static final String kPeripheralBandRequestingAuthenticationNotification = "kPeripheralBandRequestingAuthenticationNotification";
 	public static final String kPeripheralBandAuthenticationFailedNotification = "kPeripheralBandAuthenticationFailedNotification";
@@ -44,6 +48,7 @@ public class PeripheralBand extends WahoooBand {
 
     public static final String kDeviceInformationReadSerialNumber = "device information read serial number";
     public static final String kBatteryServiceReadBatteryLevel = "battery service read battery level";
+    public static final String kDeviceServiceReadFirmwareVersion = "kDeviceServiceReadFirmwareVersion";
 
 	public static final String kPeripheralCurrentFirmwareVersion = "1";
 	public static final String kPeripheralFirmwareHexName = "iswimband_1_0";
@@ -105,7 +110,14 @@ public class PeripheralBand extends WahoooBand {
             Iterator ci = service.getCharacteristics().iterator();
             while(ci.hasNext()) {
                 BluetoothGattCharacteristic ch = (BluetoothGattCharacteristic)ci.next();
-                peripheral.readCharacteristic(ch);
+                if (ch.getUuid().equals(serialNumberID())) {
+                    peripheral.readCharacteristic(ch);
+                    try {
+                        Thread.sleep(READCHARACTERISTIC_INTERVAL);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
@@ -146,6 +158,7 @@ public class PeripheralBand extends WahoooBand {
     public static class BatteryService {
         public static UUID batteryServiceID() {
             return UUID.fromString(BleManager.getLongUuidFromShortUuid("180f"));
+            //return UUID.fromString("EBEA0000-473C-48F7-AEBA-3C9CB39C1A31");
         }
 
         public static UUID batteryLevelID() {
@@ -168,6 +181,11 @@ public class PeripheralBand extends WahoooBand {
             while(ci.hasNext()) {
                 BluetoothGattCharacteristic ch = (BluetoothGattCharacteristic)ci.next();
                 peripheral.readCharacteristic(ch);
+                try {
+                    Thread.sleep(READCHARACTERISTIC_INTERVAL);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -193,15 +211,62 @@ public class PeripheralBand extends WahoooBand {
             return UUID.fromString("64AC0000-4A4B-4B58-9F37-94D3C52FFDF7");
         }
 
+        public static UUID firmwareVersionID() {
+            return UUID.fromString("64AC0001-4A4B-4B58-9F37-94D3C52FFDF7");
+        }
+
         private BluetoothGattService _service;
         private BlePeripheral _peripheral;
-        public void setService(BluetoothGattService service) {
-            //this._peripheral = peripheral;
+
+        public String firmwareVersion;
+
+        public void setService(BlePeripheral peripheral, BluetoothGattService service) {
+            this._peripheral = peripheral;
             this._service = service;
+            this.firmwareVersion = "1.0";
+
+            // read whole characteristics
+            Iterator ci = service.getCharacteristics().iterator();
+            while(ci.hasNext()) {
+                BluetoothGattCharacteristic ch = (BluetoothGattCharacteristic)ci.next();
+                if (ch.getUuid().equals(firmwareVersionID())) {
+                    peripheral.readCharacteristic(ch);
+                    try {
+                        Thread.sleep(READCHARACTERISTIC_INTERVAL);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
 
         public void beginAuthentication() {
             //
+        }
+
+        public void readCharacteristic(BluetoothGattCharacteristic characteristic, byte[] value) {
+            if (characteristic.getUuid().equals(firmwareVersionID())) {
+                Logger.log("read firmware version --------------- ");
+                try {
+                    String key = new String(value, "utf-8");
+                    Logger.log("read firmware version : %s", key);
+
+                    String remains = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.";
+                    String cleanedkey = "";
+                    for (int i = 0; i < key.length(); i++) {
+                        if (remains.contains(key.charAt(i) + ""))
+                            cleanedkey = cleanedkey + key.charAt(i);
+                    }
+
+                    firmwareVersion = cleanedkey;
+                    Logger.log("read firmware version : %s", firmwareVersion);
+
+                    EventBus.getDefault().post(new SEvent(kDeviceServiceReadFirmwareVersion, _peripheral));
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -241,7 +306,7 @@ public class PeripheralBand extends WahoooBand {
     Timer                _alertTimer;
     Timer                _warningTimer;
     Timer                _updateSignalTimer;
-    //UILocalNotification*    _alertNotification;
+    ScheduleNotification _alertNotification;
     long				_disconnectTime;
     
     
@@ -269,7 +334,6 @@ public class PeripheralBand extends WahoooBand {
             cancelPanicAlert();
         }
 
-        //[[NSNotificationCenter defaultCenter] postNotificationName:kWahoooBandDataUpdatedNotification object:self];
         EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
     }
 
@@ -309,8 +373,7 @@ public class PeripheralBand extends WahoooBand {
 
     public String displayName() {
         if ( _peripheral != null && (_name == null || _name.length() == 0) ) {
-            String tempname = _peripheral.name();
-            return tempname;
+            return _peripheral.name();
         }
 
         return _name;
@@ -329,10 +392,9 @@ public class PeripheralBand extends WahoooBand {
     }
 
     public String fwVersion() {
-        //if ( _iDevicesService )
-        //{
-        //   return _iDevicesService.firmwareVersion;
-        //}
+        if ( _iDevicesService != null ) {
+           return _iDevicesService.firmwareVersion;
+        }
 
         return null;
     }
@@ -385,6 +447,8 @@ public class PeripheralBand extends WahoooBand {
             _readDeviceSerialNumber((BlePeripheral)e.object);
         } else if (kBatteryServiceReadBatteryLevel.equalsIgnoreCase(e.name)) {
             _updatedBatteryLevel((BlePeripheral)e.object);
+        } else if (kDeviceServiceReadFirmwareVersion.equalsIgnoreCase(e.name)) {
+            _readFirmwareVersion((BlePeripheral)e.object);
         }
     }
 
@@ -451,13 +515,13 @@ public class PeripheralBand extends WahoooBand {
             _warningTimer = null;
         }
 
-        /*
-        if ( _alertNotification ) {
-            [[UIApplication sharedApplication] cancelLocalNotification:_alertNotification];
 
-            _alertNotification = nil;
+        if ( _alertNotification != null ) {
+            ScheduleNotificationManager.sharedInstance().cancelNotification(_alertNotification);
+
+            _alertNotification = null;
         }
-        */
+
 
         if ( _updateSignalTimer != null ) {
             _updateSignalTimer.cancel(); _updateSignalTimer.purge();
@@ -493,13 +557,12 @@ public class PeripheralBand extends WahoooBand {
             _warningTimer = null;
         }
 
-        /*
-        if ( _alertNotification ) {
-            [[UIApplication sharedApplication] cancelLocalNotification:_alertNotification];
 
-            _alertNotification = nil;
+        if ( _alertNotification != null ) {
+            ScheduleNotificationManager.sharedInstance().cancelNotification(_alertNotification);
+            _alertNotification = null;
         }
-        */
+
     }
 
     public void startUpgrade() {
@@ -663,17 +726,17 @@ public class PeripheralBand extends WahoooBand {
         while (i.hasNext()) {
             BluetoothGattService service = (BluetoothGattService)i.next();
             if (service.getUuid().equals(BatteryService.batteryServiceID())) {
-                _batteryService.setService(peripheral, service);
                 Logger.log("_retrieveCharacteristics , _peripheral(%s), batteryService", _peripheral.address());
+                _batteryService.setService(peripheral, service);
             }
             else if (service.getUuid().equals(DeviceInformationService.deviceInformationServiceID())) {
-                _deviceInfoService.setService(peripheral, service);
                 Logger.log("_retrieveCharacteristics , _peripheral(%s), deviceInfoService", _peripheral.address());
+                _deviceInfoService.setService(peripheral, service);
             }
             else if (service.getUuid().equals(iDevicesService.iDevicesServiceId())) {
-                _iDevicesService.setService(service);
-                _iDevicesService.beginAuthentication();
                 Logger.log("_retrieveCharacteristics , _peripheral(%s), iDevicesService", _peripheral.address());
+                _iDevicesService.setService(peripheral, service);
+                _iDevicesService.beginAuthentication();
             }
         }
     }
@@ -692,6 +755,10 @@ public class PeripheralBand extends WahoooBand {
         else if (characteristic.getService() == _batteryService._service) {
             Logger.log("_readCharacteristic , _peripheral(%s), _batteryService", _peripheral.address());
             _batteryService.readCharacteristic(characteristic, value);
+        }
+        else if (characteristic.getService() == _iDevicesService._service) {
+            Logger.log("_readCharacteristic, _peripheral(%s), _iDevicesService", _peripheral.address());
+            _iDevicesService.readCharacteristic(characteristic, value);
         }
     }
 
@@ -793,22 +860,24 @@ public class PeripheralBand extends WahoooBand {
             fireTime = (int)_disconnectTime + WAHOOBAND_NONSWIMMER_ALERT_TIME;
         }
 
-        /*
-        if ( _alertNotification )
-        {
-            [[UIApplication sharedApplication] cancelLocalNotification:_alertNotification];
 
-            _alertNotification = nil;
+        if ( _alertNotification != null )
+        {
+            ScheduleNotificationManager.sharedInstance().cancelNotification(_alertNotification);
+
+            _alertNotification = null;
         }
 
-        _alertNotification = [[UILocalNotification alloc] init];
+        _alertNotification = new ScheduleNotification();
+        _alertNotification.setTitle("Attention!");
+        _alertNotification.setAlertBody("An iSwimband requires your attention!");
 
-        _alertNotification.alertBody = NSLocalizedStringWithDefaultValue(@"WAHOOO_NOTIFICATION_ALERT_BODY", nil, [NSBundle mainBundle], @"An iSwimband requires your attention!", @"Local notification message body");
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(TimeUnit.SECONDS.toMillis(fireTime));
+        Date fireDate = cal.getTime();
 
-        _alertNotification.fireDate= [NSDate dateWithTimeIntervalSince1970:fireTime];
-
-        [[UIApplication sharedApplication] scheduleLocalNotification:_alertNotification];
-        */
+        _alertNotification.setFireDate(fireDate);
+        ScheduleNotificationManager.sharedInstance().scheduleNotification(_alertNotification);
     }
 
     protected void _readDeviceSerialNumber(BlePeripheral peripheral) {
@@ -822,6 +891,15 @@ public class PeripheralBand extends WahoooBand {
     protected void _updatedBatteryLevel(BlePeripheral peripheral) {
         if (peripheral == _peripheral) {
             _batteryLevel = _batteryService.batteryLevel;
+
+            EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
+        }
+    }
+
+    protected void _readFirmwareVersion(BlePeripheral peripheral) {
+        if (peripheral == _peripheral) {
+
+            _fwVersion = _iDevicesService.firmwareVersion;
 
             EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
         }

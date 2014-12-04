@@ -5,6 +5,8 @@ import android.os.Handler;
 import com.aquaticsafetyconceptsllc.iswimband.Ble.BleManager;
 import com.aquaticsafetyconceptsllc.iswimband.Ble.BlePeripheral;
 import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
+import com.aquaticsafetyconceptsllc.iswimband.R;
+import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 import de.greenrobot.event.EventBus;
 
@@ -231,7 +233,7 @@ public class WahoooBandManager {
 	}
 
 	protected void _discoveredPeripheral(BlePeripheral peripheral)  {
-		Logger.log("WahoooBandManager - _discoveredPeripheral : " + peripheral.name() + " : " + peripheral.address());
+		//Logger.log("WahoooBandManager - _discoveredPeripheral : " + peripheral.name() + " : " + peripheral.address());
 
 		PeripheralBand connectedBand = _findConnectedBandForPeripheral(peripheral);
 
@@ -241,7 +243,7 @@ public class WahoooBandManager {
 			// connect(connectedBand);
 			Logger.log("peripheral(%s) is in connectedBands", connectedBand.address());
 			if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
-				Logger.log("peripheral(%s) is in connectedBands, but disconnected - try to connect()", connectedBand.address());
+				 Logger.log("peripheral(%s) is in connectedBands, but disconnected - try to connect()", connectedBand.address());
 				connect(connectedBand);
 			}
 			return;
@@ -254,7 +256,7 @@ public class WahoooBandManager {
 				//connect(peripheralBand);
 				Logger.log("band(%s) already exist in connectingBands", peripheral.address());
 				if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
-					Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", connectedBand.address());
+					 Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", connectedBand.address());
 					connect(connectedBand);
 				}
 				return;
@@ -264,7 +266,7 @@ public class WahoooBandManager {
 		for (WahoooBand band : advertisingBands) {
 			PeripheralBand peripheralBand = (PeripheralBand) band;
 			if (peripheralBand.peripheral().address().equalsIgnoreCase(peripheral.address())) {
-				Logger.log("WahoooBandManager - _discoveredPeripheral : band(%s) already exist in advertisingBands", peripheral.address());
+				 Logger.log("WahoooBandManager - _discoveredPeripheral : band(%s) already exist in advertisingBands", peripheral.address());
 				return;
 			}
 		}
@@ -427,19 +429,9 @@ public class WahoooBandManager {
 
 
 	public void playBandConnectedSoundNotification() {
-		/*
-		SystemSoundID audioEffect;
-		NSString *path = [[NSBundle mainBundle] pathForResource:@"SONAR1" ofType:@"WAV"];
 
-		if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
-		NSURL *pathURL = [NSURL fileURLWithPath:path];
-		AudioServicesCreateSystemSoundID((__bridge CFURLRef) pathURL, &audioEffect);
-		AudioServicesPlaySystemSound(audioEffect);
-		}
-			else {
-			NSLog(@"ERROR: Sound file not found: %@", path);
-		}
-		*/
+		SoundManager.sharedInstance().playAlertSound(R.raw.SONAR1, false, false);
+
 	}
 
 }

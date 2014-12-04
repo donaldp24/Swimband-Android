@@ -2,15 +2,17 @@ package com.aquaticsafetyconceptsllc.iswimband.band;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import com.aquaticsafetyconceptsllc.iswimband.Network.NetConnection;
+import com.aquaticsafetyconceptsllc.iswimband.Network.Packets.BandDataPacket;
 import com.aquaticsafetyconceptsllc.iswimband.Network.Packets.NetPacket;
 
 public class WahoooDevice {
 	 private String _name;
 	 private String  _id;
 	 private NetConnection _connection;
-	 private HashMap<String, Object>    _bands;
+	 private HashMap<String, RemoteBand>    _bands;
 	 
 	 public String name() {
 		 return _name;
@@ -22,88 +24,73 @@ public class WahoooDevice {
 	 public NetConnection connection() {
 		 return _connection;
 	 }
+	public void setConnection(NetConnection connection) {
+		_connection = connection;
+	}
 	 
 	 public String deviceID() {
 		 return _id;
 	 }
 	 
-	 public WahoooDevice(String name, String deviceID){
+	 public WahoooDevice(String name, String deviceID) {
 	     super();
 	     _name = name;
 	     _id = deviceID;
-	     _bands = new HashMap<String, Object>();
+	     _bands = new HashMap<String, RemoteBand>();
 	 }
 
 	 public void disconnect() {
-		 /*
-	     if ( _connection )
-	     {
-	    	 Collection<Object> bands = _bands.values();	         
-	         for( RemoteBand band : bands )
-	         {
-	             [[WahoooBandManager sharedManager] removeRemoteBand:band];
+	     if ( _connection != null ) {
+	    	 Collection<RemoteBand> bands = _bands.values();
+	         for( RemoteBand band : bands ) {
+	             WahoooBandManager.sharedManager().removeRemoteBand(band);
 	         }
 	         
-	         [_bands removeAllObjects];
+	         _bands.clear();
 	     }
-	     */
 	 }
 
 	 public void lostConnection() {
-		 /*
-	     NSArray* values = [_bands allValues];
+
+		 Collection<RemoteBand> values = _bands.values();
 	     
-	     for ( RemoteBand* band in values )
-	     {
-	         [band setBandState:kWahoooBandState_NotConnected];
+	     for ( RemoteBand band : values ) {
+	         band.setBandState(WahoooBand.WahoooBandState_t.kWahoooBandState_NotConnected);
 	     }
-	     */
 	 }
 
 	 public void processPacket(NetPacket packet) {
-		 /*
-	     switch( packet.type )
-	     {
-	         case kPacketType_BandData:
-	         {
-	             BandDataPacket* bandData = (BandDataPacket*)packet;
-	             RemoteBand* remoteBand = [_bands objectForKey:bandData.bandID];
+	     switch( packet.type ) {
+	         case kPacketType_BandData: {
+	             BandDataPacket bandData = (BandDataPacket)packet;
+	             RemoteBand remoteBand = _bands.get(bandData.bandID);
 	             
-	             if ( bandData.state == kWahoooBandState_NotConnected )
-	             {
-	                 if ( remoteBand )
-	                 {
-	                     [[WahoooBandManager sharedManager] removeRemoteBand:remoteBand];
+	             if ( bandData.state == WahoooBand.WahoooBandState_t.kWahoooBandState_NotConnected.getValue() ) {
+	                 if ( remoteBand != null ) {
+	                     WahoooBandManager.sharedManager().removeRemoteBand(remoteBand);
 	                 }
-	                     
-	                 [_bands removeObjectForKey:bandData.bandID];
-	                 
+	                 _bands.remove(bandData.bandID);
 	                 return;
 	             }
 	             
-	             if ( remoteBand == nil )
-	             {
-	                 remoteBand = [[RemoteBand alloc] init];
+	             if ( remoteBand == null ) {
+	                 remoteBand = new RemoteBand();
+	                 remoteBand.setParentDevice(this);
 	                 
-	                 remoteBand.parentDevice = self;
-	                 
-	                 [_bands setObject:remoteBand forKey:bandData.bandID];
-	                 
-	                 [[WahoooBandManager sharedManager] addRemoteBand:remoteBand];
-	                 
+	                 _bands.put(bandData.bandID, remoteBand);
+	                 WahoooBandManager.sharedManager().addRemoteBand(remoteBand);
 	             }
 	             
-	             remoteBand.bandState = bandData.state;
+	             remoteBand.setBandState(WahoooBand.WahoooBandState_t.fromInt(bandData.state));
 	             
-	             remoteBand.batteryLevel = bandData.batteryLevel;
+	             remoteBand.setBatteryLevel(bandData.batteryLevel);
 	             
-	             remoteBand.bandID = bandData.bandID;
+	             remoteBand.setBandID(bandData.bandID);
 	             
-	             remoteBand.name = bandData.bandName;
+	             remoteBand.setName(bandData.bandName);
 	             
 	         }
 	             break;
 	     }
-	     */
 	 }
 }

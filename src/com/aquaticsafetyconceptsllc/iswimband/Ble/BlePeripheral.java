@@ -208,6 +208,7 @@ public class BlePeripheral {
             Logger.log("BluetoothAdapter not initialized");
             return;
         }
+        Logger.log("BlePeripheral.readCharacteristic (%s)", characteristic.getUuid().toString());
         mBluetoothGatt.readCharacteristic(characteristic);
     }
 

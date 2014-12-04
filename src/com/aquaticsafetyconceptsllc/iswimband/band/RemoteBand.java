@@ -5,8 +5,13 @@ import de.greenrobot.event.EventBus;
 
 public class RemoteBand extends WahoooBand {
 	private WahoooDevice _parent;
-	private WahoooDevice parentDevice() {
+
+
+	public WahoooDevice parentDevice() {
 		return _parent;
+	}
+	public void setParentDevice(WahoooDevice parentDevice) {
+		_parent = parentDevice;
 	}
 	
 	public WahoooBandType type() {
@@ -31,6 +36,4 @@ public class RemoteBand extends WahoooBand {
 	public void setBandID(String bid) {
 	    _bandID = bid;
 	}
-
-
 }
