@@ -12,34 +12,36 @@ public class CommonUtils {
     
 	public static int packShort(short val, byte[] data, int offset) {
     	data[offset] = (byte)((val & 0xFF00) >> 8);
-    	data[offset + 1] = (byte)((val & 0x00FF) >> 16);
+    	data[offset + 1] = (byte)(val & 0x00FF);
     	return offset + 2;
     }
 	
 	public static int getHostInt(byte[] little) {
 		int ret = 0;
-		ret = ((little[0] << 24) + (little[1] << 16) + (little[2] << 8) + little[3]);
+		ret = ((little[3] << 24) + (little[2] << 16) + (little[1] << 8) + little[0]);
 		return ret;
 	}
 	
 	public static int getHostInt(byte little0, byte little1, byte little2, byte little3) {
 		int ret = 0;
-		ret = ((little0 << 24) + (little1 << 16) + (little2 << 8) + little3);
+		ret = ((little3 << 24) + (little2 << 16) + (little1 << 8) + little0);
 		return ret;
 	}
 	
 	public static short getHostShort(byte little0, byte little1) {
 		short ret = 0;
-		ret = (short)(((little0 << 8) + little1));
+		ret = (short)(((little1 << 8) + little0));
 		return ret;
 	}
 	
 	public static int CFSwapInt32HostToLittle(int value) {
-		return ((value & 0xFF000000) >> 24) + ((value & 0x00FF0000) >> 8) + ((value & 0x0000FF00) << 8) + ((value & 0x000000FF) << 24);  
+		//return ((value & 0xFF000000) >> 24) + ((value & 0x00FF0000) >> 8) + ((value & 0x0000FF00) << 8) + ((value & 0x000000FF) << 24);
+		return value;
 	}
 	
 	public static short CFSwapInt16HostToLittle(short value) {
-		return (short)(((value & 0xFF00) >> 8) + ((value & 0x00FF) << 8));
+		//return (short)(((value & 0xFF00) >> 8) + ((value & 0x00FF) << 8));
+		return value;
 	}
 	
 	public static byte[] appendData(byte[] a, byte[] b) {

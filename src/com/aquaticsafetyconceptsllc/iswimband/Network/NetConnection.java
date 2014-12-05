@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import android.net.nsd.NsdServiceInfo;
 
@@ -34,7 +35,9 @@ import com.aquaticsafetyconceptsllc.iswimband.Utils.Buffer;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 
 public class NetConnection {
-	
+
+    public static final String TAG = "NetConnection";
+
 	public static enum ConnectionState
 	{
 	    kConnectionState_None,
@@ -57,42 +60,94 @@ public class NetConnection {
     private NsdServiceInfo service;
     private String _serviceName;
     private String _serviceID;
+    private long _lastDataReceivedTime;
     
     public Buffer readBuffer;
     
     public NetConnectionDelegate delegate = null;
-    
-    
-    public NetConnection(Socket socket) {
-    	initBuffer();
-        setSocket(socket);
+
+    private boolean _isOpen;
+
+    public NetConnection() {
+        _isOpen = false;
+        _serviceName = null;
+        _serviceID = null;
+
+        initBuffer();
     }
     
-    public NetConnection(NsdServiceInfo service) {
+    public boolean openConnectionWithNativeSocket(Socket socket) {
+    	close();
+
+        initBuffer();
+        _lastDataReceivedTime = TimeUnit.MICROSECONDS.toSeconds(System.currentTimeMillis());
+        boolean ret = _setSocket(socket);
+
+        if (ret == false)
+            return false;
+
+        _connectToServer();
+
+        return true;
+    }
+    
+    public boolean openConnectionWithNetService(NsdServiceInfo service) {
+
+        close();
+
+        _lastDataReceivedTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+
+        _serviceName = service.getServiceName();
+
     	this.service = service;
+
     	initBuffer();
+
     	Socket socket = null;
 		try {
 			socket = new Socket(service.getHost(), service.getPort());
-			setSocket(socket);
+			boolean ret = _setSocket(socket);
+
+            if (ret == false)
+                return false;
+
+            _connectToServer();
+
+            return true;
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+            return false;
 		}
+    }
+
+    public boolean isOpen() {
+        return _isOpen;
+    }
+
+    public long lastDataReceivedTime() {
+        return _lastDataReceivedTime;
     }
     
     private void initBuffer() {
     	readBuffer = new Buffer(1024 * 1024);
     }
 
-    public void tearDown() {
-        mChatClient.tearDown();
+    public void close() {
+        if (mChatClient != null)
+            mChatClient.close();
+        _isOpen = false;
+
+        if (delegate != null)
+            delegate.netConnectionDisconnected(this);
     }
 
-    public boolean connectToServer() {
+    protected boolean _connectToServer() {
         if (mSocket == null)
             return false;
         mChatClient = new ChatClient();
+        _isOpen = true;
         return true;
     }
 
@@ -115,7 +170,7 @@ public class NetConnection {
     		return _serviceName;
     	if (service != null)
     		return service.getServiceName();
-    	return "";
+    	return "Connecting...";
     }
     
     public void setServiceName(String val) {
@@ -127,10 +182,10 @@ public class NetConnection {
     public void setServiceID(String val) {
     	_serviceID = val;
     }
-    
 
-    public synchronized void receivedMessage(byte[] msg) {
-        Logger.logDebug("message received ");
+
+    protected synchronized void _receivedMessage(byte[] msg) {
+        Logger.log("message received ");
         
         readBuffer.put(msg);
         
@@ -138,10 +193,11 @@ public class NetConnection {
         	delegate.netConnectionReceivedData(this);
     }
 
-    private synchronized void setSocket(Socket socket) {
-        Logger.logDebug("setSocket being called.");
+    protected synchronized boolean _setSocket(Socket socket) {
+        Logger.log("setSocket being called.");
         if (socket == null) {
-            Logger.logDebug("Setting a null socket.");
+            Logger.log("Setting a null socket.");
+            return false;
         }
         if (mSocket != null) {
             if (mSocket.isConnected()) {
@@ -150,13 +206,15 @@ public class NetConnection {
                 } catch (IOException e) {
                     // TODO(alexlucas): Auto-generated catch block
                     e.printStackTrace();
+                    return false;
                 }
             }
         }
         mSocket = socket;
+        return true;
     }
 
-    private Socket getSocket() {
+    protected Socket _getSocket() {
         return mSocket;
     }
 
@@ -168,11 +226,9 @@ public class NetConnection {
         BlockingQueue<byte[]> mMessageQueue;
         private int QUEUE_CAPACITY = 10;
 
-
-
         public ChatClient() {
 
-            Logger.logDebug("Creating chatClient");
+            Logger.log("Creating chatClient");
 
             mMessageQueue = new ArrayBlockingQueue<byte[]>(QUEUE_CAPACITY);
 
@@ -191,12 +247,12 @@ public class NetConnection {
 
             @Override
             public void run() {
-       
-                if (getSocket() == null) {
-                    Logger.logDebug("Client-side socket not initialized. cannot run it");
+
+                if (_getSocket() == null) {
+                    Logger.log("Client-side socket not initialized. cannot run it");
                     return;
                 } else {
-                    Logger.logDebug("Socket already initialized. skipping!");
+                    Logger.log("Socket already initialized. skipping!");
                 }
 
                 mRecThread = new Thread(new ReceivingThread());
@@ -206,9 +262,13 @@ public class NetConnection {
                 while (true) {
                     try {
                         byte[] msg = mMessageQueue.take();
-                        sendMessage(msg);
+                        boolean ret = _sendMessage(msg);
+                        if (!ret) {
+                            Logger.log("_sendMessage failed --- break SendingThread");
+                            break;
+                        }
                     } catch (InterruptedException ie) {
-                        Logger.logDebug("Message sending loop interrupted, exit");
+                        Logger.log("Message sending loop interrupted, exit");
                         break;
                     }
                 }
@@ -229,45 +289,51 @@ public class NetConnection {
                     while (!Thread.currentThread().isInterrupted()) {
                     	char[] readBuffer = new char[1024];
                     	int readLen = input.read(readBuffer, 0, 1024);
+                        if (readLen < 0) {
+                            Logger.logError(TAG, "error : readLen of input.read < 0, close connection!");
+                            break;
+                        }
                         if (readLen != 0) {
-                            Logger.logDebug("Read from the stream");
+                            Logger.l(TAG, "Read from the stream");
                             byte[] buffer = new byte[readLen];
                             for (int i = 0; i < readLen; i++)
                             	buffer[i] = (byte)readBuffer[i];
-                            receivedMessage(buffer);
+                            //_receivedMessage(buffer);
                         } else {
-                            Logger.logDebug("The nulls! The nulls!");
+                            Logger.logError(TAG, "The nulls! The nulls!");
                             break;
                         }
                     }
                     input.close();
 
                 } catch (IOException e) {
-                    Logger.logError("Server loop error: %s", e);
+                    Logger.logError(TAG, "Server loop error: %s", e);
                 }
             }
         }
 
-        public void tearDown() {
+        public void close() {
             try {
-                getSocket().close();
+                _getSocket().close();
             } catch (IOException ioe) {
-                Logger.logDebug("Error when closing server socket.");
+                Logger.log("Error when closing server socket.");
             }
         }
 
-        protected void sendMessage(byte[] msg) {
+        protected boolean _sendMessage(byte[] msg) {
             try {
-                Socket socket = getSocket();
+                Socket socket = _getSocket();
                 if (socket == null) {
-                    Logger.logDebug("Socket is null, wtf?");
+                    Logger.log("Socket is null, wtf?");
+                    return false;
                 } else if (socket.getOutputStream() == null) {
-                    Logger.logDebug("Socket output stream is null, wtf?");
+                    Logger.log("Socket output stream is null, wtf?");
+                    return false;
                 }
 
                 PrintWriter out = new PrintWriter(
                         new BufferedWriter(
-                                new OutputStreamWriter(getSocket().getOutputStream())), true);
+                                new OutputStreamWriter(_getSocket().getOutputStream())), true);
                 
                 char[] writeBuffer = new char[msg.length];
                 for (int i = 0; i < msg.length; i++)
@@ -275,13 +341,17 @@ public class NetConnection {
                 out.print(writeBuffer);
                 out.flush();
             } catch (UnknownHostException e) {
-                Logger.logDebug("Unknown Host %s", e);
+                Logger.log("Unknown Host %s", e);
+                return false;
             } catch (IOException e) {
-                Logger.logDebug("I/O Exception %s", e);
+                Logger.log("I/O Exception %s", e);
+                return false;
             } catch (Exception e) {
-                Logger.logDebug("Error3 %s", e);
+                Logger.log("Error3 %s", e);
+                return false;
             }
-            Logger.logDebug("Client sent message: ");
+            Logger.log("Client sent message: ");
+            return true;
         }
     }
 }

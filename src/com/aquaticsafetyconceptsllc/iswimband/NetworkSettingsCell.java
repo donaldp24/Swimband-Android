@@ -29,13 +29,6 @@ public class NetworkSettingsCell {
 
         mSwitchSharing = (Switch)mView.findViewById(R.id.switch_sharing);
         mImageForDeviceName = (ImageView)mView.findViewById(R.id.image_fordevicename);
-
-        mSwitchSharing.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                EventBus.getDefault().post(new SEvent("networkshareswitchchanged"));
-            }
-        });
     }
 
     public View getView() {

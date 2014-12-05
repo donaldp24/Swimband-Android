@@ -19,4 +19,5 @@ public class SEvent {
 
 
     public static final String EVENT_BLUETOOTH_STATE_CHANGED = "event bluetooth state changed";
+    public static final String EVENT_NETWORK_STATE_CHANGED = "event network state changed";
 }

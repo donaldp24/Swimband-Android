@@ -2,24 +2,19 @@ package com.aquaticsafetyconceptsllc.iswimband;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.widget.Toast;
 import com.aquaticsafetyconceptsllc.iswimband.Ble.BleManager;
 import com.aquaticsafetyconceptsllc.iswimband.CoreData.CoreDataManager;
-import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
-import com.aquaticsafetyconceptsllc.iswimband.Network.NetManager;
+import com.aquaticsafetyconceptsllc.iswimband.Network.NetConnectionManager;
 import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.ScheduleNotificationManager;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Settings;
 import com.aquaticsafetyconceptsllc.iswimband.band.WahoooBandManager;
 import com.crashlytics.android.Crashlytics;
-import de.greenrobot.event.EventBus;
 
 /**
  * Created by donaldpae on 11/25/14.
@@ -75,7 +70,7 @@ public class SplashActivity extends Activity {
         CoreDataManager.initialize(getApplicationContext());
         FlowManager.initialize(getApplicationContext());
         Settings.initialize(getApplicationContext());
-        NetManager.initialize(getApplicationContext());
+        NetConnectionManager.initialize(getApplicationContext());
         ScheduleNotificationManager.initialize(getApplicationContext());
 
         // start scan

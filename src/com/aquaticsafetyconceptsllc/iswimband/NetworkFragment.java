@@ -1,17 +1,27 @@
 package com.aquaticsafetyconceptsllc.iswimband;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.Fragment;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.nsd.NsdServiceInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
 import com.aquaticsafetyconceptsllc.iswimband.Network.NetConnection;
-import com.aquaticsafetyconceptsllc.iswimband.Network.NetManager;
+import com.aquaticsafetyconceptsllc.iswimband.Network.NetConnectionManager;
+import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
 import de.greenrobot.event.EventBus;
 
 import java.util.ArrayList;
@@ -45,6 +55,8 @@ public class NetworkFragment extends Fragment {
 
     protected int selectedSegmentIndex = 0;
 
+    private Handler mHandler;
+
     public class DeviceItem {
         String deviceName;
         boolean isAddHidden;
@@ -72,6 +84,12 @@ public class NetworkFragment extends Fragment {
         mSettingsCell = new NetworkSettingsCell(this.getActivity());
         mSettingsContainer = (ViewGroup)rootView.findViewById(R.id.rl_settings);
         mSettingsContainer.addView(mSettingsCell.getView());
+        mSettingsCell.mSwitchSharing.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                networkShareSwitchChanged();
+            }
+        });
 
         // create list of bands
         mDeviceList = (ListView)rootView.findViewById(R.id.device_list);
@@ -106,29 +124,29 @@ public class NetworkFragment extends Fragment {
 
         if (mSettingsCell != null) {
             mSettingsCell.onResume();
-            mSettingsCell.setDeviceName(NetManager.sharedManager().serviceName());
+            mSettingsCell.setDeviceName(NetConnectionManager.sharedManager().serviceName());
         }
 
         EventBus.getDefault().register(this);
 
         //self.navigationItem.rightBarButtonItem = [WahoooAppDelegate createInfoButton];
 
-        // Req# 14.	Wifi disconnect while in network range, alert tone
-        // Add self as observer to listen to network change notification
-        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_networkStatusChanged:) name:kReachabilityChangedNotification object:nil];
 
-        //_reachingInternet = [Reachability reachabilityForLocalWiFi];
-
-        //NetworkStatus internetStatus = [_reachingInternet currentReachabilityStatus];
-
-        //if (internetStatus != ReachableViaWiFi) {
-
-        //    UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Network Notification" message:@"This feature is only available if you have a Network Connection" delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
-
-        //    [alert show];
-        //}
-
-        //[_reachingInternet startNotifier];
+        ConnectivityManager conMan = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = conMan.getActiveNetworkInfo();
+        if (networkInfo == null || networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
+            String title = "Network Notification";
+            String message = "This feature is only available if you have a Network Connection";
+            new AlertDialog.Builder(getActivity())
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
     }
 
     @Override
@@ -196,9 +214,19 @@ public class NetworkFragment extends Fragment {
     }
 
     public void onEventMainThread(SEvent e) {
-        if ("networkshareswitchchanged".equals(e.name)) {
-            networkShareSwitchChanged();
+        if (SEvent.EVENT_NETWORK_STATE_CHANGED.equals(e.name)) {
+            _networkStatusChanged();
         }
+        else if (NetConnectionManager.kNetConnectionManagerConnectionsUpdated.equals(e.name)) {
+            _connectionManagerUpdate();
+        }
+        else if (NetConnectionManager.kNetConnectionManagerServerPublishNameConflict.equals(e.name)) {
+            _serviceNameCollision();
+        }
+        else if (NetConnectionManager.kNetConnectionManagerServerPublishFailed.equals(e.name)) {
+            _servicePublishError();
+        }
+
     }
 
     protected void _connectionManagerUpdate() {
@@ -213,9 +241,9 @@ public class NetworkFragment extends Fragment {
         switch ( selectedSegmentIndex )
         {
             case kNetworkFilter_Available:
-                for (int i = 0; i < NetManager.sharedManager().numberOfAvailableServices(); i++) {
+                for (int i = 0; i < NetConnectionManager.sharedManager().numberOfAvailableServices(); i++) {
                     DeviceItem deviceItem = new DeviceItem();
-                    NsdServiceInfo service = NetManager.sharedManager().availableServiceAtIndex(i);
+                    NsdServiceInfo service = NetConnectionManager.sharedManager().availableServiceAtIndex(i);
                     deviceItem.deviceName = service.getServiceName();
                     deviceItem.isAddHidden = false;
                     deviceItem.isRemoveHidden = true;
@@ -223,9 +251,9 @@ public class NetworkFragment extends Fragment {
                 }
                 break;
             case kNetworkFilter_Clients:
-                for (int i = 0; i < NetManager.sharedManager().numberOfServerConnections(); i++) {
+                for (int i = 0; i < NetConnectionManager.sharedManager().numberOfServerConnections(); i++) {
                     DeviceItem deviceItem = new DeviceItem();
-                    NetConnection connection = NetManager.sharedManager().serverConnectionAtIndex(i);
+                    NetConnection connection = NetConnectionManager.sharedManager().serverConnectionAtIndex(i);
                     deviceItem.deviceName = connection.serviceName();
                     deviceItem.isAddHidden = true;
                     deviceItem.isRemoveHidden = false;
@@ -234,9 +262,9 @@ public class NetworkFragment extends Fragment {
                 break;
 
             case kNetworkFilter_Servers:
-                for (int i = 0; i < NetManager.sharedManager().numberOfClientConnections(); i++) {
+                for (int i = 0; i < NetConnectionManager.sharedManager().numberOfClientConnections(); i++) {
                     DeviceItem deviceItem = new DeviceItem();
-                    NetConnection connection = NetManager.sharedManager().clientConnectionAtIndex(i);
+                    NetConnection connection = NetConnectionManager.sharedManager().clientConnectionAtIndex(i);
                     deviceItem.deviceName = connection.serviceName();
                     deviceItem.isAddHidden = true;
                     deviceItem.isRemoveHidden = false;
@@ -248,63 +276,99 @@ public class NetworkFragment extends Fragment {
         mLeDeviceListAdapter.replaceWith(deviceItemArrayList);
     }
 
-    public void networkShareSwitchChanged() {
+    protected void _networkStatusChanged() {
+        // Only if network sharing is on, detect and alert if WiFi is disconnected
+        if(mSettingsCell.mSwitchSharing.isChecked()) {
+            ConnectivityManager conMan = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = conMan.getActiveNetworkInfo();
 
-        //NetworkStatus internetStatus = [_reachingInternet currentReachabilityStatus];
+            if(networkInfo == null || networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
 
-        //if ( [sender isKindOfClass:[UISwitch class]] )
-        {
-            //UISwitch* networkSwitch = (UISwitch*)sender;
-            //[_settingsCell.deviceNameField resignFirstResponder];
+                // WiFi disconnected - Alert sound
+                SoundManager.sharedInstance().playAlertSound(R.raw.wifidisconnect, false, true);
+
+                // Show the message popup
+                _showMessagePopup("You have lost your WIFI Connection");
+            }
+            else {
+
+                // Close message popup if open and stop alert sound once WiFi come back online
+                if (genericModalAlertDisplay != null)
+                    genericModalAlertDisplay.dismiss();
+            }
+        }
+
+    }
+
+    protected void networkShareSwitchChanged() {
+
+        ConnectivityManager conMan = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = conMan.getActiveNetworkInfo();
+
+        //if ( sender instanceof Switch) {
+
+            // hide keyboard
+            InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(
+                    Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(mSettingsCell.mEditDeviceName.getWindowToken(), 0);
+
             boolean isOn = mSettingsCell.switchChecked();
 
             if ( isOn ) {
                 if ( mSettingsCell.getDeviceName().length() > 0 ) {
-                    //if (internetStatus == ReachableViaWiFi) {
 
-                        NetManager.sharedManager().setServiceName(mSettingsCell.getDeviceName());
+                    if (networkInfo != null &&
+                            networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+
+                        NetConnectionManager.sharedManager().setServiceName(mSettingsCell.getDeviceName());
                         mSettingsCell.enableNameField(false);
 
-                        NetManager.sharedManager().startServer();
-                        NetManager.sharedManager().startBrowser();
-
-                    //}
-                    //else
-                    //{
-
-                     //   UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Network Notification" message:@"You are not currently connected to a WiFi Network" delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
-
-                     //   [alert show];
-
-                     //   [self _turnOffSwitch];
-
-                    //}
+                        NetConnectionManager.sharedManager().startServer();
+                        NetConnectionManager.sharedManager().startBrowser();
+                    }
+                    else
+                    {
+                        String title = "Network Notification";
+                        String message = "You are not currently connected to a WiFi Network";
+                        new AlertDialog.Builder(getActivity())
+                                .setTitle(title)
+                                .setMessage(message)
+                                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                    }
+                                })
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
+                        _turnOffSwitch();
+                    }
                 }
                 else
                 {
                     _invalidServiceNameAlert(mSettingsCell.getDeviceName());
                     _turnOffSwitch();
                 }
-
-
             }
             else {
                 mSettingsCell.enableNameField(true);
-                NetManager.sharedManager().stopSharing();
+                NetConnectionManager.sharedManager().stopSharing();
             }
-        }
+        //}
     }
 
     protected void _serviceNameCollision() {
         _turnOffSwitch();
 
-        //String title = NSLocalizedStringWithDefaultValue(@"NETWORK_SERVICE_NAME_COLLISION_ALERT_TITLE", nil, [NSBundle mainBundle], @"Network", @"Title of duplicate service name alert");
-        //String message = NSLocalizedStringWithDefaultValue(@"NETWORK_SERVICE_NAME_COLLISION_ALERT_MESSAGE", nil, [NSBundle mainBundle], @"Unable to start sharing!  Someone else is already using this device name", @"Message for service name collision alert");
+        String title = "Network";
         String message = "Unable to start sharing!  Someone else is already using this device name";
-        Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
-
-        //UIAlertView* alert = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:[CommonStrings ok] otherButtonTitles: nil];
-        //[alert show];
+        new AlertDialog.Builder(getActivity())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
     }
 
     protected void _servicePublishError() {
@@ -316,8 +380,8 @@ public class NetworkFragment extends Fragment {
 
         mSettingsCell.setSwitchChecked(false, true);
         mSettingsCell.enableNameField(true);
-        NetManager.sharedManager().stopServer();
-        NetManager.sharedManager().stopBrowser();
+        NetConnectionManager.sharedManager().stopServer();
+        NetConnectionManager.sharedManager().stopBrowser();
     }
 
 
@@ -326,36 +390,76 @@ public class NetworkFragment extends Fragment {
     }
 
     protected void _invalidServiceNameAlert(String name) {
-        //NSString* title = NSLocalizedStringWithDefaultValue(@"NETWORK_INVALID_SERVICE_NAME_ALERT_TITLE", nil, [NSBundle mainBundle], @"Network", @"Title of invalid service name alert");
-        //NSString* message = [NSString stringWithFormat:NSLocalizedStringWithDefaultValue(@"NETWORK_INVALID_SERVICE_NAME_ALERT_MESSAGE", nil, [NSBundle mainBundle], @"%@ is not a valid device name.", @"Format string for invalid service name alert message"), name];
+        String title = "Network";
         String message = String.format("%@ is not a valid device name.", name);
-
-        //UIAlertView* alert = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:[CommonStrings ok] otherButtonTitles: nil];
-        //[alert show];
-
-        Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
+        new AlertDialog.Builder(getActivity())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
     }
+
+    protected void _showMessagePopup(String message) {
+        genericModalAlertDisplay = new GenericModalAlertDialog(getActivity(), message, new DialogDismissInterface() {
+            @Override
+            public void onDismiss(Dialog dlg, int nRes) {
+                onGenericModalAlertDisplay();
+            }
+        });
+    }
+
+    protected void onGenericModalAlertDisplay() {
+        if(genericModalAlertDisplay != null) {
+            SoundManager.sharedInstance().stopAlertSound();
+            genericModalAlertDisplay = null;
+        }
+    }
+
 
     private AdapterView.OnItemClickListener createOnItemClickListener() {
         return new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                mHandler = new Handler();
+
                 switch (selectedSegmentIndex) {
                     case kNetworkFilter_Available:
-                        String serviceName = NetManager.sharedManager().nameOfAvailableServiceAtIndex(position);
-                        if (serviceName != null && serviceName.length() > 0) {
-                            NetManager.sharedManager().openConnectionToService(serviceName);
-                        }
+                        final String serviceName = NetConnectionManager.sharedManager().nameOfAvailableServiceAtIndex(position);
+                        AsyncTask.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (serviceName != null && serviceName.length() > 0) {
+                                    NetConnectionManager.sharedManager().openConnectionToService(serviceName);
+                                }
+                            }
+                        });
+
+
                         break;
                     case kNetworkFilter_Servers: {
-                        NetConnection connection = NetManager.sharedManager().clientConnectionAtIndex(position);
-                        NetManager.sharedManager().closeConnection(connection);
+                        AsyncTask.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                NetConnection connection = NetConnectionManager.sharedManager().clientConnectionAtIndex(position);
+                                NetConnectionManager.sharedManager().closeConnection(connection);
+                            }
+                        });
+
                     }
                         break;
 
                     case kNetworkFilter_Clients: {
-                        NetConnection connection = NetManager.sharedManager().serverConnectionAtIndex(position);
-                        NetManager.sharedManager().closeConnection(connection);
+                        AsyncTask.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                NetConnection connection = NetConnectionManager.sharedManager().serverConnectionAtIndex(position);
+                                NetConnectionManager.sharedManager().closeConnection(connection);
+                            }
+                        });
                     }
                         break;
                 }
@@ -452,7 +556,7 @@ public class NetworkFragment extends Fragment {
             ViewHolder(View view) {
                 nameTextView = (TextView)view.findViewWithTag("name");
                 addImageView = (ImageView)view.findViewWithTag("actionAdd");
-                removeImageView = (ImageView)view.findViewWithTag("actoinRemove");
+                removeImageView = (ImageView)view.findViewWithTag("actionRemove");
             }
         }
     }

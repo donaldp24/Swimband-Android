@@ -430,7 +430,7 @@ public class WahoooBandManager {
 
 	public void playBandConnectedSoundNotification() {
 
-		SoundManager.sharedInstance().playAlertSound(R.raw.SONAR1, false, false);
+		SoundManager.sharedInstance().playAlertSound(R.raw.sonar1, false, false);
 
 	}
 

@@ -5,12 +5,15 @@ import java.io.UnsupportedEncodingException;
 
 import com.aquaticsafetyconceptsllc.iswimband.Network.Packets.NetPacketException.NetPacketErrorCode;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.CommonUtils;
+import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 
 public class NetPacket {
 
+	public static final String TAG = "NetPacket";
+
 	public PacketType type;
 	
-	public static int NETPACKET_HEADER_TAG = 0x504E4469;//'iDNP';
+	public static int NETPACKET_HEADER_TAG = 0x69444E50;//0x504E4469;//'iDNP';
 	public static short NETPACKET_VERSION_1_0 = 1;
 	public static short NETPACKET_HEADER_CURRENT_VERSION = NETPACKET_VERSION_1_0;
 	
@@ -65,8 +68,10 @@ public class NetPacket {
 	    	int offset = 0;
 	    	offset = CommonUtils.packInt(tag, ret, offset);
 	    	offset = CommonUtils.packInt(packetSize, ret, offset);
-	    	offset = CommonUtils.packShort(version, ret, offset);
-	    	offset = CommonUtils.packShort(type, ret, offset);
+	    	//offset = CommonUtils.packShort(version, ret, offset);
+	    	//offset = CommonUtils.packShort(type, ret, offset);
+			offset = CommonUtils.packShort(type, ret, offset);
+			offset = CommonUtils.packShort(version, ret, offset);
 	    	return ret;
 	    }
 	}
@@ -86,8 +91,11 @@ public class NetPacket {
 	    
 	    header.tag = CommonUtils.getHostInt(data);
 	    header.packetSize = CommonUtils.getHostInt(data[4], data[5], data[6], data[7]);
-	    header.type = CommonUtils.getHostShort(data[8], data[9]);
-	    header.version = CommonUtils.getHostShort(data[10], data[11]);
+		//header.type = CommonUtils.getHostShort(data[8], data[9]);
+		//header.version = CommonUtils.getHostShort(data[10], data[11]);
+		header.version = CommonUtils.getHostShort(data[8], data[9]);
+		header.type = CommonUtils.getHostShort(data[10], data[11]);
+
 	    
 	    
 	    // Invalid header tag
@@ -137,6 +145,7 @@ public class NetPacket {
 	        
 	        if ( space < /*sizeof(header.tag)*/ 4 )
 	        {
+				Logger.l(TAG, "space is not enough");
 	            return -1;
 	        }
 	        

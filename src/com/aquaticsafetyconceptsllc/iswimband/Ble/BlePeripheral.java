@@ -2,7 +2,9 @@ package com.aquaticsafetyconceptsllc.iswimband.Ble;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import android.os.Handler;
 import com.aquaticsafetyconceptsllc.iswimband.CoreData.CoreDataManager;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 
@@ -29,11 +31,20 @@ public class BlePeripheral {
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTING = 1;
     public static final int STATE_CONNECTED = 2;
+
+    public static final int CONNECTION_TIMEOUT = 20;
+    public static final int DISCOVER_TIMEOUT = 20;
     
     public BlePeripheralDelegate delegate;
     
     private String mAddress;
     private String _name;
+
+    private Handler connectionTimeoutHandler;
+    private Runnable connectionTimeoutRunnable;
+
+    private Handler discoverTimeoutHandler;
+    private Runnable discoverTimeoutRunnable;
 
     
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
@@ -46,17 +57,29 @@ public class BlePeripheral {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 
                 mConnectionState = STATE_CONNECTED;
+                connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
+
+
                 if (delegate != null)
                 	delegate.gattConnected(BlePeripheral.this);
                 
                 Logger.log("Connected to GATT server.");
                 // Attempts to discover services after successful connection.
-                Logger.log("Attempting to start service discovery:" +
-                        mBluetoothGatt.discoverServices());
+                boolean ret = mBluetoothGatt.discoverServices();
+                Logger.log("Attempting to start service discovery:" + ret);
+
+                if (ret) {
+                    discoverTimeoutHandler.postDelayed(discoverTimeoutRunnable, TimeUnit.SECONDS.toMillis(DISCOVER_TIMEOUT));
+                } else {
+                    disconnect();
+                }
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 
                 mConnectionState = STATE_DISCONNECTED;
+                connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
+
+
                 Logger.log("Disconnected from GATT server.");
                 
                 if (delegate != null)
@@ -67,10 +90,13 @@ public class BlePeripheral {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+
+                discoverTimeoutHandler.removeCallbacks(discoverTimeoutRunnable);
                 if (delegate != null)
                 	delegate.gattServicesDiscovered(BlePeripheral.this);
             } else {
                 Logger.log("onServicesDiscovered received: " + status);
+                disconnect();
             }
         }
 
@@ -105,6 +131,32 @@ public class BlePeripheral {
     	this.mAddress = address;
 
         this.scannedTime = System.currentTimeMillis();
+
+        this.connectionTimeoutHandler = new Handler(context.getMainLooper());
+        this.connectionTimeoutRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (connectionState() != STATE_CONNECTED) {
+                    disconnect();
+
+                    if (delegate != null)
+                        delegate.gattDisconnected(BlePeripheral.this);
+                }
+            }
+        };
+
+        this.discoverTimeoutHandler = new Handler(context.getMainLooper());
+        this.discoverTimeoutRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (connectionState() == STATE_CONNECTED) {
+                    disconnect();
+
+                    if (delegate != null)
+                        delegate.gattDisconnected(BlePeripheral.this);
+                }
+            }
+        };
 
         mBluetoothAdapter = BleManager.sharedInstance().bluetoothAdapter();
         if (mBluetoothAdapter == null) {
@@ -163,6 +215,9 @@ public class BlePeripheral {
         Logger.log("Trying to create a new connection.");
         mBluetoothDeviceAddress = mAddress;
         mConnectionState = STATE_CONNECTING;
+
+        connectionTimeoutHandler.postDelayed(connectionTimeoutRunnable, TimeUnit.SECONDS.toMillis(CONNECTION_TIMEOUT));
+
         return true;
     }
 
@@ -173,6 +228,10 @@ public class BlePeripheral {
      * callback.
      */
     public void disconnect() {
+
+        connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
+        discoverTimeoutHandler.removeCallbacks(discoverTimeoutRunnable);
+
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Logger.log("BluetoothAdapter not initialized");
             return;

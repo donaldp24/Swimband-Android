@@ -9,6 +9,9 @@ import com.aquaticsafetyconceptsllc.iswimband.Network.Packets.NetPacket;
 import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 
 public class WahoooDeviceManager {
+
+    public static final String TAG = "WahoooDeviceManager";
+
 	private static WahoooDeviceManager _instance = null;
 	
 	private HashMap<String, WahoooDevice>    _hostDevices;
@@ -24,7 +27,7 @@ public class WahoooDeviceManager {
     	_clientDevices = new HashMap<String, WahoooDevice>();
     }
     
-    public WahoooDeviceManager sharedManager() {
+    public static WahoooDeviceManager sharedManager() {
     	if (_instance == null)
     		_instance = new WahoooDeviceManager();
     	return _instance;
@@ -161,6 +164,7 @@ public class WahoooDeviceManager {
     }
 
     public WahoooDevice _addDeviceWithName(String name, String deviceID, HashMap<String, WahoooDevice> dict) {
+        Logger.l(TAG, "_addDeviceWithName, %s, %s", name, deviceID);
         WahoooDevice device = dict.get(deviceID);
         
         if ( device == null ) {

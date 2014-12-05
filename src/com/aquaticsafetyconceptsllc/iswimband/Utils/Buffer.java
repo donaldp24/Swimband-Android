@@ -9,6 +9,7 @@ public class Buffer {
 		bytes = new byte[capacity];
 		readPos = 0;
 		writePos = 0;
+		this.capacity = capacity;
 	}
 	synchronized public int length() {
 		return writePos - readPos;
@@ -18,6 +19,7 @@ public class Buffer {
 		if (writePos + dataLen > capacity)
 			return;
 		System.arraycopy(data, 0, bytes, writePos, dataLen);
+		writePos = writePos + dataLen;
 	}
 	
 	synchronized public int get(byte[] dst, int length) {

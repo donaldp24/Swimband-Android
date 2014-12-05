@@ -3,9 +3,11 @@ package com.aquaticsafetyconceptsllc.iswimband;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -62,6 +64,23 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
                 _updateNameTimer();
             }
         }, 0, 100);
+
+        setOnKeyListener(new Dialog.OnKeyListener() {
+
+            @Override
+            public boolean onKey(DialogInterface arg0, int keyCode,
+                                 KeyEvent event) {
+                // TODO Auto-generated method stub
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    nRes = 0;
+                    if (dismissListener != null) {
+                        dismissListener.onDismiss(SerialNoDialog.this);
+                    }
+                    dismiss();
+                }
+                return true;
+            }
+        });
     }
 
     @Override
