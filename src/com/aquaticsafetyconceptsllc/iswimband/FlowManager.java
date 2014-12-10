@@ -158,7 +158,8 @@ public class FlowManager implements SerialNoDialogInterface {
     public boolean shouldDismiss(SerialNoDialog dialog) {
         PeripheralBand band = dialog.getBand();
         if( band != null ) {
-            if ( band.setAuthenticationKey(dialog.getSerialNo()) ) {
+            //if ( band.setAuthenticationKey(dialog.getSerialNo()) ) {
+            if (band.setAuthenticationKey("001daa")) {
                 return true;
             }
             else {

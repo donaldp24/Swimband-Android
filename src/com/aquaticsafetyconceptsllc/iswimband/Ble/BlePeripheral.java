@@ -19,6 +19,8 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
 public class BlePeripheral {
+    public static final String TAG = "BlePeripheral";
+
     private Context mContext;
     private BluetoothAdapter mBluetoothAdapter;
     private String mBluetoothDeviceAddress;
@@ -63,7 +65,7 @@ public class BlePeripheral {
                 if (delegate != null)
                 	delegate.gattConnected(BlePeripheral.this);
                 
-                Logger.log("Connected to GATT server.");
+                Logger.l(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
                 boolean ret = mBluetoothGatt.discoverServices();
                 Logger.log("Attempting to start service discovery:" + ret);
@@ -80,7 +82,7 @@ public class BlePeripheral {
                 connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
 
 
-                Logger.log("Disconnected from GATT server.");
+                Logger.l(TAG, "Disconnected from GATT server.");
                 
                 if (delegate != null)
                 	delegate.gattDisconnected(BlePeripheral.this);

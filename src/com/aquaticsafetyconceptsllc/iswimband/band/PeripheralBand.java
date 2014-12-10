@@ -20,6 +20,9 @@ import de.greenrobot.event.EventBus;
 
 public class PeripheralBand extends WahoooBand {
 
+    public static final String TAG = "PeripheralBand";
+
+
 	public static final int SERVICE_LOCALID = 0xEBEA0000;
 
 	public static final int UNPAIR_BANDSTATE = 1;
@@ -648,7 +651,7 @@ public class PeripheralBand extends WahoooBand {
             int alertDelay = _getAlertDelay();
             int warningDelay = _getWarningDelay();
 
-            Logger.log("PeripheralBand._peripheralDisconnected : alertDelay : %d, warningDelay : %d", alertDelay, warningDelay);
+            Logger.l(TAG, "PeripheralBand._peripheralDisconnected : alertDelay : %d, warningDelay : %d", alertDelay, warningDelay);
 
             //_iDevicesService.peripheral = nil;
             _perphState = PeripheralBandState.kPeripheralBandState_Disconnected;
@@ -712,7 +715,6 @@ public class PeripheralBand extends WahoooBand {
         _peripheralDisconnected(peripheral);
     }
 
-
     protected void _retrieveCharacteristics(BlePeripheral peripheral) {
         if (_peripheral != peripheral) {
             //Logger.log("_retrieveCharacteristics , _peripheral(%s) is not equal (%s)", _peripheral.address(), peripheral.address());
@@ -741,7 +743,6 @@ public class PeripheralBand extends WahoooBand {
         }
     }
 
-
     protected void _readCharacteristic(BlePeripheral peripheral, BluetoothGattCharacteristic characteristic, byte[] value) {
         if (peripheral != _peripheral) {
             //Logger.log("_readCharacteristic , _peripheral(%s), is not equal peripheral(%s)", _peripheral.address(), peripheral.address());
@@ -761,8 +762,6 @@ public class PeripheralBand extends WahoooBand {
             _iDevicesService.readCharacteristic(characteristic, value);
         }
     }
-
-
 
     protected void _setupAlertTimer() {
         if ( _warningTimer != null ) {
@@ -829,6 +828,7 @@ public class PeripheralBand extends WahoooBand {
         int warningTime = _warningTime;
 
         if ( _alertType == WahoooAlertType.kWahoooAlertType_NonSwimmer ) {
+            Logger.l(TAG, "type is no swimmer : warningTime = 0");
             warningTime = 0;
         }
         else {
@@ -1311,8 +1311,6 @@ public class PeripheralBand extends WahoooBand {
             }, 500);
         }
     }
-
-
 
     protected boolean _longTimeSinceDisconnect() {
         if( _bandData.disconnectTime > 0 ) {
