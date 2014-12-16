@@ -244,7 +244,8 @@ public class WahoooBandManager {
 			Logger.log("peripheral(%s) is in connectedBands", connectedBand.address());
 			if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
 				 Logger.log("peripheral(%s) is in connectedBands, but disconnected - try to connect()", connectedBand.address());
-				connect(connectedBand);
+				if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD)
+					connect(connectedBand);
 			}
 			return;
 		}
@@ -257,7 +258,8 @@ public class WahoooBandManager {
 				Logger.log("band(%s) already exist in connectingBands", peripheral.address());
 				if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
 					 Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", connectedBand.address());
-					connect(connectedBand);
+					if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD)
+						connect(connectedBand);
 				}
 				return;
 			}

@@ -158,8 +158,7 @@ public class FlowManager implements SerialNoDialogInterface {
     public boolean shouldDismiss(SerialNoDialog dialog) {
         PeripheralBand band = dialog.getBand();
         if( band != null ) {
-            //if ( band.setAuthenticationKey(dialog.getSerialNo()) ) {
-            if (band.setAuthenticationKey("001daa")) {
+            if ( band.setAuthenticationKey(dialog.getSerialNo()) ) {
                 return true;
             }
             else {
@@ -206,28 +205,32 @@ public class FlowManager implements SerialNoDialogInterface {
 
     public void startFlashing() {
 
-        if(isFlashing) {
-            if(!isFlashLEDOn) {
-                mCamera = Camera.open();
-                Camera.Parameters p = mCamera.getParameters();
-                p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                mCamera.setParameters(p);
-                mCamera.startPreview();
+        try {
 
-                //[UIScreen mainScreen].brightness = 0.7;
-                isFlashLEDOn = true;
-            }
-            else {
+            if (isFlashing) {
+                if (!isFlashLEDOn) {
+                    mCamera = Camera.open();
+                    Camera.Parameters p = mCamera.getParameters();
+                    p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                    mCamera.setParameters(p);
+                    mCamera.startPreview();
 
-                if (mCamera != null) {
-                    mCamera.stopPreview();
-                    mCamera.release();
-                    mCamera = null;
+                    //[UIScreen mainScreen].brightness = 0.7;
+                    isFlashLEDOn = true;
+                } else {
+
+                    if (mCamera != null) {
+                        mCamera.stopPreview();
+                        mCamera.release();
+                        mCamera = null;
+                    }
+
+                    //[UIScreen mainScreen].brightness = 1.0;
+                    isFlashLEDOn = false;
                 }
-
-                //[UIScreen mainScreen].brightness = 1.0;
-                isFlashLEDOn = false;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

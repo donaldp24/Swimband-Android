@@ -77,8 +77,9 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
                         dismissListener.onDismiss(SerialNoDialog.this);
                     }
                     dismiss();
+                    return true;
                 }
-                return true;
+                return false;
             }
         });
     }

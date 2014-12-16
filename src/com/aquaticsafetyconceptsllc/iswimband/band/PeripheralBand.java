@@ -40,6 +40,8 @@ public class PeripheralBand extends WahoooBand {
 
     private static final int READCHARACTERISTIC_INTERVAL = 100;
 
+    public static final int RSSI_THRESHOLD = -93;
+
 
 	public static final String kPeripheralBandRequestingAuthenticationNotification = "kPeripheralBandRequestingAuthenticationNotification";
 	public static final String kPeripheralBandAuthenticationFailedNotification = "kPeripheralBandAuthenticationFailedNotification";
@@ -637,7 +639,6 @@ public class PeripheralBand extends WahoooBand {
         else {
             Logger.log("PeripheralBand._peripheralConnected - peripheral(%s)(%s) is not equal band.peripheral", peripheral.address(), peripheral.name());
         }
-
     }
 
     protected void _peripheralDisconnected(BlePeripheral peripheral) {
@@ -910,9 +911,21 @@ public class PeripheralBand extends WahoooBand {
             RSSIEntry entry = new RSSIEntry();
 
             entry.value = peripheral.rssi();
+            Logger.l(TAG, "rssi : %d", entry.value);
             entry.timeStamp = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
 
             _rssiHistory.add(0, entry);
+            if (entry.value < RSSI_THRESHOLD &&
+                    _rssiHistory.size() > 1 &&
+                    _rssiHistory.get(1).value < RSSI_THRESHOLD) {
+
+                    Logger.l(TAG, "rssi is low, forcely disconnecting....");
+                    // this is disconnected state, forcely close connection
+                    _peripheral.disconnect();
+            }
+            else {
+                //
+            }
 
             _calcuateRSSIVelocity();
 
