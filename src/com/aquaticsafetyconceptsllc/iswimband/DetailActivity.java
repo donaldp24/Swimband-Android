@@ -1,7 +1,6 @@
 package com.aquaticsafetyconceptsllc.iswimband;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,6 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.aquaticsafetyconceptsllc.iswimband.Ble.BleManager;
@@ -24,7 +24,7 @@ import de.greenrobot.event.EventBus;
 /**
  * Created by donaldpae on 11/28/14.
  */
-public class DetailActivity extends Activity implements View.OnClickListener {
+public class DetailActivity extends BaseActivity implements View.OnClickListener {
 
     public static final int RANGE_METER_BAR_COUNT = 10;
 
@@ -54,7 +54,7 @@ public class DetailActivity extends Activity implements View.OnClickListener {
 
     private boolean mEditMode = false;
 
-    private TextView mNameTextViewForEdit;
+    private EditText mNameEditTextForEdit;
     private Button mBtnSave;
     private Button mBtnType1;
     private Button mBtnType2;
@@ -169,7 +169,7 @@ public class DetailActivity extends Activity implements View.OnClickListener {
         mBtnDisconnect = (Button)findViewById(R.id.btn_disconnect); mBtnDisconnect.setOnClickListener(this);
         // --
 
-        mNameTextViewForEdit = (TextView)findViewById(R.id.text_nameforedit);
+        mNameEditTextForEdit = (EditText)findViewById(R.id.edit_nameforedit);
         mBtnSave = (Button)findViewById(R.id.btn_save); mBtnSave.setOnClickListener(this);
         mBtnType1 = (Button)findViewById(R.id.btn_type1); mBtnType1.setOnClickListener(this);
         mBtnType2 = (Button)findViewById(R.id.btn_type2); mBtnType2.setOnClickListener(this);
@@ -274,14 +274,19 @@ public class DetailActivity extends Activity implements View.OnClickListener {
         if ( mBand == null )
             return;
 
-        if ( mBand.displayName().equalsIgnoreCase(mNameTextView.getText().toString())) {
-            mNameTextViewForEdit.setText(mBand.displayName());
+        if (mEditMode) {
+            //
         }
+        else {
+            if (mBand.displayName().equalsIgnoreCase(mNameTextView.getText().toString())) {
+                mNameEditTextForEdit.setText(mBand.displayName());
+            }
 
-        if ( mNameTextViewForEdit != null ) {
-            //self.editNameField.placeholder = self.band.defaultName;
-            if (mNameTextViewForEdit.getText().toString().length() == 0)
-                mNameTextViewForEdit.setText(mBand.defaultName());
+            if (mNameEditTextForEdit != null) {
+                //self.editNameField.placeholder = self.band.defaultName;
+                if (mNameEditTextForEdit.getText().toString().length() == 0)
+                    mNameEditTextForEdit.setText(mBand.defaultName());
+            }
         }
 
         mNameTextView.setText(mBand.displayName());
@@ -343,7 +348,7 @@ public class DetailActivity extends Activity implements View.OnClickListener {
             return;
 
         //self.navigationItem.leftBarButtonItem = _bbCancel;
-        mNameTextViewForEdit.setText(mBand.displayName());
+        mNameEditTextForEdit.setText(mBand.displayName());
         mBtnRedAlert.setText(alertTimeString(mBand.alertTime()));
         mBtnWarning.setText(warningTimeString(mBand.warningTime(), mBand.alertTime()));
 
@@ -547,8 +552,8 @@ public class DetailActivity extends Activity implements View.OnClickListener {
     public void doneTap() {
         // Commit changes
 
-        if( !mNameTextViewForEdit.getText().toString().equals(mBand.displayName()) ) {
-            mBand.changeName(mNameTextViewForEdit.getText().toString());
+        if( !mNameEditTextForEdit.getText().toString().equals(mBand.displayName()) ) {
+            mBand.changeName(mNameEditTextForEdit.getText().toString());
         }
 
         //MRN: Can't assume this will always work if there are non-numeric characters in string (or localized)

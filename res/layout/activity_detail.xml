@@ -235,14 +235,16 @@
                     android:background="@drawable/band_detail_background"
                     >
             </ImageView>
-            <TextView
-                    android:id="@+id/text_nameforedit"
+            <EditText
+                    android:id="@+id/edit_nameforedit"
                     android:layout_marginLeft="20px"
-                    android:layout_marginTop="20px"
-                    android:layout_width="200px"
-                    android:layout_height="30px"
+                    android:layout_marginTop="10px"
+                    android:layout_width="140px"
+                    android:layout_height="40px"
                     android:textSize="15px"
+                    android:padding="0px"
                     android:text="iSwimband-002609"
+                    android:inputType="text"
                     />
             <Button
                     android:id="@+id/btn_save"

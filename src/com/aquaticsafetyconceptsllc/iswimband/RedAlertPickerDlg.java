@@ -130,6 +130,12 @@ public class RedAlertPickerDlg extends Dialog {
     }
 
     protected void createWarningList() {
+        /*
+         * create items of roller-list for warning
+         */
+        // 2014-12-20, commented because Paul Newcomb required only "immediate" for warning time
+
+        /*
         mWarningList = new ArrayList<PickerItem>();
         int count = (_editAlertTime - DetailActivity.WARNING_TIME_MIN) / DetailActivity.ALERT_TIME_INC;
         if (count < 0)
@@ -147,6 +153,21 @@ public class RedAlertPickerDlg extends Dialog {
 
             mWarningList.add(item);
         }
+        */
+
+        mWarningList = new ArrayList<PickerItem>();
+        int count = 1;
+        int i = 0;
+        String title = DetailActivity.warningTimeString(_editAlertTime - (i * DetailActivity.ALERT_TIME_INC), _editAlertTime);
+
+        int color = Color.rgb(0, 0, 0);
+
+        PickerItem item = new PickerItem();
+        item.index = i;
+        item.title = title;
+        item.color = color;
+
+        mWarningList.add(item);
     }
 
     public class PickerItem {

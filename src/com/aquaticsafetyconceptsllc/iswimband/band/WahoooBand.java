@@ -112,7 +112,11 @@ public class WahoooBand {
     
     public WahoooBand() {
 		_alertTime = WAHOOBAND_DEFAULT_ALERT_TIME;
-		_warningTime = WAHOOBAND_DEFAULT_WARNING_TIME;
+
+		// commented on 2014-12-20, Paul Newcomb required to allow only "immediate" for warningTime
+		//_warningTime = WAHOOBAND_DEFAULT_WARNING_TIME;
+
+		_warningTime = _alertTime;
 
 		_bandState = WahoooBandState_t.kWahoooBandState_NotConnected;
 

@@ -21,7 +21,7 @@ import com.crittercism.app.Crittercism;
 /**
  * Created by donaldpae on 11/25/14.
  */
-public class SplashActivity extends Activity {
+public class SplashActivity extends BaseActivity {
     private final int LOADINGVIEW_TIMEOUT = 1000;
     private Handler handler;
     private boolean isBleEnabled;
@@ -31,8 +31,8 @@ public class SplashActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Crashlytics.start(this);
         Crittercism.initialize(getApplicationContext(), "5493775f51de5e9f042ec467");
+        Crashlytics.start(this);
         setContentView(R.layout.activity_splash);
 
         initVariables();

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 /**
  * Created by donaldpae on 11/29/14.
  */
-public class AlarmActivity extends Activity {
+public class AlarmActivity extends BaseActivity {
     protected ListView mBandListView;
     protected ViewGroup mStatusContainer;
     protected StatusMonitor mStatusMonitor;

@@ -41,6 +41,7 @@ public class PeripheralBand extends WahoooBand {
     private static final int READCHARACTERISTIC_INTERVAL = 100;
 
     public static final int RSSI_THRESHOLD = -93;
+    public static final int RSSI_TOLERANCE = 15;
 
 
 	public static final String kPeripheralBandRequestingAuthenticationNotification = "kPeripheralBandRequestingAuthenticationNotification";
@@ -916,10 +917,11 @@ public class PeripheralBand extends WahoooBand {
 
             _rssiHistory.add(0, entry);
             if (entry.value < RSSI_THRESHOLD &&
-                    _rssiHistory.size() > 1 &&
-                    _rssiHistory.get(1).value < RSSI_THRESHOLD) {
+                    _rssiHistory.size() > 2 &&
+                    _rssiHistory.get(1).value < RSSI_THRESHOLD &&
+                    _rssiHistory.get(2).value < RSSI_THRESHOLD) {
 
-                    Logger.l(TAG, "rssi is low, forcely disconnecting....");
+                    Logger.l(TAG, "rssi(%d) is low (3 times), forcely disconnecting....", entry.value);
                     // this is disconnected state, forcely close connection
                     _peripheral.disconnect();
             }

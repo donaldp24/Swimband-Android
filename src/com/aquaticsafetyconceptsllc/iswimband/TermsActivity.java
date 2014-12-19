@@ -15,7 +15,7 @@ import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
 /**
  * Created by donaldpae on 11/25/14.
  */
-public class TermsActivity extends Activity {
+public class TermsActivity extends BaseActivity {
     protected HorizontalPager hpData = null;
     private Button btnTestVolume;
     private boolean isAlarmOn = false;

@@ -19,7 +19,7 @@ import android.widget.TextView;
 import com.crashlytics.android.Crashlytics;
 
 
-public class MainActivity extends Activity implements ActionBar.TabListener {
+public class MainActivity extends BaseActivity implements ActionBar.TabListener {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
