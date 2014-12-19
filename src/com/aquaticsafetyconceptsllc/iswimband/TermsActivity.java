@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
 
@@ -20,6 +21,10 @@ public class TermsActivity extends Activity {
     private boolean isAlarmOn = false;
     protected RelativeLayout mMainLayout = null;
     protected boolean mInitialized = false;
+
+    private ImageView ivCircle1;
+    private ImageView ivCircle2;
+    private ImageView ivCircle3;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -59,6 +64,20 @@ public class TermsActivity extends Activity {
                     if (isAlarmOn) {
                         stopTestAlarm();
                     }
+                }
+
+                ivCircle1.setBackgroundResource(R.drawable.icon_circle_nonselected);
+                ivCircle2.setBackgroundResource(R.drawable.icon_circle_nonselected);
+                ivCircle3.setBackgroundResource(R.drawable.icon_circle_nonselected);
+
+                if (screen == 0) {
+                    ivCircle1.setBackgroundResource(R.drawable.icon_circle_selected);
+                }
+                else if (screen == 1) {
+                    ivCircle2.setBackgroundResource(R.drawable.icon_circle_selected);
+                }
+                else if (screen == 2) {
+                    ivCircle3.setBackgroundResource(R.drawable.icon_circle_selected);
                 }
 
                 hpData.setCurrentScreen(screen, false);
@@ -104,6 +123,10 @@ public class TermsActivity extends Activity {
                 overridePendingTransition(R.anim.fade, R.anim.alpha);
             }
         });
+
+        ivCircle1 = (ImageView)findViewById(R.id.ivCircle1);
+        ivCircle2 = (ImageView)findViewById(R.id.ivCircle2);
+        ivCircle3 = (ImageView)findViewById(R.id.ivCircle3);
     }
 
     @Override

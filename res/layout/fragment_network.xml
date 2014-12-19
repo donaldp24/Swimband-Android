@@ -42,7 +42,7 @@
                 android:layout_width="102px"
                 android:layout_height="40px"
                 android:background="@drawable/rectbluegray_layout"
-                android:text="Viewwing"
+                android:text="Viewing"
                 android:textColor="#3f3f3f"
                 android:textSize="12px"
                 android:padding="0dp"
