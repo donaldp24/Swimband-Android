@@ -16,6 +16,8 @@ import com.aquaticsafetyconceptsllc.iswimband.Utils.Settings;
 import com.aquaticsafetyconceptsllc.iswimband.band.WahoooBandManager;
 import com.crashlytics.android.Crashlytics;
 
+import com.crittercism.app.Crittercism;
+
 /**
  * Created by donaldpae on 11/25/14.
  */
@@ -30,6 +32,7 @@ public class SplashActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Crashlytics.start(this);
+        Crittercism.initialize(getApplicationContext(), "5493775f51de5e9f042ec467");
         setContentView(R.layout.activity_splash);
 
         initVariables();
