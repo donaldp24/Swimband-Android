@@ -40,8 +40,8 @@ public class PeripheralBand extends WahoooBand {
 
     private static final int READCHARACTERISTIC_INTERVAL = 100;
 
-    public static final int RSSI_THRESHOLD = -93;
-    public static final int RSSI_TOLERANCE = 15;
+    public static final int RSSI_THRESHOLD = -90;
+    public static final int RSSI_TOLERANCE = 35;
 
 
 	public static final String kPeripheralBandRequestingAuthenticationNotification = "kPeripheralBandRequestingAuthenticationNotification";
@@ -544,7 +544,12 @@ public class PeripheralBand extends WahoooBand {
 
     public void panicAlert() {
         if ( _perphState != PeripheralBandState.kPeripheralBandState_Ready ) {
+            Logger.l(TAG, "panicAler : _perphStat is Ready!");
             super.panicAlert();
+        }
+        else {
+            Logger.l(TAG, "panicAler : but _perphStat is not Ready, return");
+            return;
         }
     }
 
@@ -787,12 +792,16 @@ public class PeripheralBand extends WahoooBand {
         if (duration < 0)
             duration = 0;
 
+        Logger.l(TAG, "duration for alert : %d", duration);
+
 
         if (warningDelay > 0) {
 
             int interval = (int)_disconnectTime + warningDelay - now;
             if (interval < 0)
                 interval = 0;
+
+            Logger.l(TAG, "interval for warning alert : %d", interval);
 
             OSDate dt = new OSDate().offsetSecond(interval);
 

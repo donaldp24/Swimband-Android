@@ -132,8 +132,6 @@ public class TermsActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
-        FlowManager.sharedInstance().setTopActivity(this);
     }
 
     @Override

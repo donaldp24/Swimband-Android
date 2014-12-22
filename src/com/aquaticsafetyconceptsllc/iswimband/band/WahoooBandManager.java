@@ -24,9 +24,6 @@ public class WahoooBandManager {
 
 	public static final String kWahoooBandDataUpdatedNotification = "kWahoooBandDataUpdatedNotification";
 
-	public static final String kWahoooBandAlertNotification = "kWahoooBandAlertNotification";
-	public static final String kWahoooBandKey = "kWahoooBandKey";
-
 	protected static WahoooBandManager _instance = null;
 	private BleManager _bleManager;
 	protected Context mContext;
@@ -107,6 +104,10 @@ public class WahoooBandManager {
 	}
 
 	public void connect(WahoooBand band)  {
+		if (band == null) {
+			Logger.log("WahoooBandManager - cannot connect band is null");
+			return;
+		}
 		if ( band.type() != WahoooBand.WahoooBandType.kWahoooBand_Peripheral ) {
 			Logger.log("WahoooBandManager - connect : band is not peripheral band");
 			return;
@@ -257,7 +258,7 @@ public class WahoooBandManager {
 				//connect(peripheralBand);
 				Logger.log("band(%s) already exist in connectingBands", peripheral.address());
 				if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
-					 Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", connectedBand.address());
+					 Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", peripheral.address());
 					if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE)
 						connect(connectedBand);
 				}
@@ -411,7 +412,7 @@ public class WahoooBandManager {
 	}
 
 	protected void _bleManagerStateChanged(int state)  {
-		if (_bleManager.isBleAvailable()) {
+		if (_bleManager.isBleEnabled()) {
 			startScan();
 		} else {
 			stopScan();

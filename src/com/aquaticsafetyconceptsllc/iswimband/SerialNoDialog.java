@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
@@ -15,16 +16,14 @@ import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import com.aquaticsafetyconceptsllc.iswimband.band.PeripheralBand;
-import de.greenrobot.event.EventBus;
 
 import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by donaldpae on 11/27/14.
  */
-public class SerialNoDialog extends Dialog implements View.OnClickListener {
-    private Activity mParentActivity;
+public class SerialNoDialog extends Dialog implements View.OnClickListener, Dialog.OnShowListener {
+    private Context mContext;
     private PeripheralBand mBand;
     private Button btnContinue;
     private Button btnCancel;
@@ -35,13 +34,29 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
     private String mSerialNo;
     private int nRes = 0; // cancel
     private Timer _nameTimer;
+    private Handler mHandler;
+    private Runnable mRunnable;
 
-    public SerialNoDialog(Activity parentActivity, PeripheralBand band, SerialNoDialogInterface dismissListener) {
-        super(parentActivity);
+    public SerialNoDialog(Context context, PeripheralBand band, SerialNoDialogInterface dismissListener) {
+        super(context);
 
-        mParentActivity = parentActivity;
+        mContext = context;
         mBand = band;
         this.dismissListener = dismissListener;
+
+        mHandler = new Handler(context.getMainLooper());
+        mRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if( mBand != null ) {
+                    textName.setText(mBand.defaultName());
+                }
+
+                mHandler.postDelayed(this, 100);
+            }
+        };
+
+        setOnShowListener(this);
     }
 
     @Override
@@ -57,13 +72,14 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
 
         initControl();
 
-        _nameTimer = new Timer();
-        _nameTimer.schedule(new TimerTask() {
+        //_nameTimer = new Timer();
+        /*_nameTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 _updateNameTimer();
             }
         }, 0, 100);
+        */
 
         setOnKeyListener(new Dialog.OnKeyListener() {
 
@@ -88,9 +104,12 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
     public void dismiss() {
         super.dismiss();
 
+        /*
         _nameTimer.cancel();
         _nameTimer.purge();
         _nameTimer = null;
+        */
+        mHandler.removeCallbacks(mRunnable);
     }
 
     private void initControl() {
@@ -130,14 +149,16 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
 
 
     protected void _updateNameTimer() {
-        mParentActivity.runOnUiThread(new Runnable() {
+        /*
+        mContext.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if( mBand != null ) {
+                if (mBand != null) {
                     textName.setText(mBand.defaultName());
                 }
             }
         });
+        */
     }
 
     public int getResponse() {
@@ -151,4 +172,10 @@ public class SerialNoDialog extends Dialog implements View.OnClickListener {
     public PeripheralBand getBand() {
         return mBand;
     }
+
+    @Override
+    public void onShow(DialogInterface dialog) {
+        mHandler.postDelayed(mRunnable, 100);
+    }
+
 }

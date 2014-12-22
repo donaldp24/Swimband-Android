@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.os.Handler;
 import android.widget.Toast;
 import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
 import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
@@ -22,9 +23,10 @@ import java.util.TimerTask;
  * Created by donaldpae on 11/27/14.
  */
 public class FlowManager implements SerialNoDialogInterface {
+
+    public static final String TAG = "FlowManager";
+
     private Context mContext;
-    private Object presentedObject;
-    private Activity mTopActivity;
 
     private static FlowManager _instance;
 
@@ -37,6 +39,8 @@ public class FlowManager implements SerialNoDialogInterface {
     private Camera mCamera;
     private Camera.Parameters param;
     private Timer flashTimer;
+
+    public Dialog presentedDialog;
 
     public static FlowManager initialize(Context context) {
         if (_instance == null)
@@ -54,11 +58,7 @@ public class FlowManager implements SerialNoDialogInterface {
         EventBus.getDefault().register(this);
     }
 
-    public void setTopActivity(Activity activity) {
-        mTopActivity = activity;
-    }
-
-    public void onEventMainThread(SEvent e) {
+    public void onEvent(SEvent e) {
         if (PeripheralBand.kPeripheralBandRequestingAuthenticationNotification.equalsIgnoreCase(e.name)) {
             _requestAuthenticationKey((PeripheralBand)e.object);
         } else if (PeripheralBand.kPeripheralBandFirstTimeSetupNotification.equalsIgnoreCase(e.name)) {
@@ -70,15 +70,23 @@ public class FlowManager implements SerialNoDialogInterface {
         }
     }
 
-    protected void _requestAuthenticationKey(PeripheralBand band) {
+    protected void _requestAuthenticationKey(final PeripheralBand band) {
         Logger.log("FlowManager._requestAuthenticationKey with band(%s)(%s)", band.name(), band.address());
         if ( band != null) {
-            if ( presentedObject == null ) {
+            if ( presentedDialog == null &&
+                    AlarmActivity.sharedInstance() == null &&
+                    DetailActivity.sharedInstance() == null ) {
                 Logger.log("FlowManager._requestAuthenticationKey : presentedObject == null, show dialog");
-                // show dialog for serial number
-                SerialNoDialog dialog = new SerialNoDialog(mTopActivity, band, this);
-                presentedObject = dialog;
-                dialog.show();
+
+                MainActivity.sharedInstance().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // show dialog for serial number
+                        SerialNoDialog dialog = new SerialNoDialog(MainActivity.sharedInstance(), band, FlowManager.this);
+                        presentedDialog = dialog;
+                        dialog.show();
+                    }
+                });
             }
             else {
                 Logger.log("FlowManager._requestAuthenticationKey : presentedObject != null, disconnect band, calling bandmanager.disconnect()");
@@ -92,7 +100,7 @@ public class FlowManager implements SerialNoDialogInterface {
     protected void _requestFirstTimeSetup(PeripheralBand band) {
         Logger.log("_requestFirstTimeSetup : band (%s)", band.address());
         if ( band != null ) {
-            if ( presentedObject == null ) {
+            if ( presentedDialog == null ) {
                 _band = band;
                 //iPhone_FirstTimeSetupVC* firstTimeVC = [[iPhone_FirstTimeSetupVC alloc] initWithNibName:@"iPhone_FirstTimeSetupVC" bundle:[NSBundle mainBundle]];
                 //firstTimeVC.band = band;
@@ -104,7 +112,7 @@ public class FlowManager implements SerialNoDialogInterface {
     protected void _requestBandSettingConfirmation(PeripheralBand band) {
         Logger.log("_requestBandSettingConfirmation : band (%s)", band.address());
         if ( band != null ) {
-            if ( presentedObject == null ) {
+            if ( presentedDialog == null ) {
                 _band = band;
                 //iPhone_UpdateBandSettingsVC* updateVC = [[iPhone_UpdateBandSettingsVC alloc] initWithNibName:@"iPhone_UpdateBandSettingsVC" bundle:[NSBundle mainBundle]];
                 //updateVC.band = band;
@@ -114,14 +122,16 @@ public class FlowManager implements SerialNoDialogInterface {
 
 
     protected void _panicAlert(WahoooBand band) {
-        Logger.log("_requestBandSettingConfirmation : WahoooBand (%s)", band.name());
+        Logger.l(TAG, "_panicAlert : WahoooBand (%s)", band.name());
 
         if ( band != null ) {
-            boolean presentView = true;
-            if (!mTopActivity.getClass().toString().equals(AlarmActivity.class.getName())) {
-                if (presentedObject != null) {
-                    Dialog dlg = (Dialog)presentedObject;
-                    dlg.dismiss();
+            boolean presentView;
+            if (AlarmActivity.sharedInstance() == null) {
+
+                presentView = true;
+
+                if (presentedDialog != null) {
+                    presentedDialog.dismiss();
                     // hide dialog
                     /*
                     if ( presentedObject.getClass().toString().equals()[tabController.presentedViewController isKindOfClass:[BandSetupModalVC class]] )
@@ -133,15 +143,16 @@ public class FlowManager implements SerialNoDialogInterface {
                     [tabController dismissViewControllerAnimated:NO completion:^{}];
                     */
                 }
+
             }
             else {
                 presentView = false;
             }
 
             if( presentView ) {
-                Intent intent = new Intent(mTopActivity, AlarmActivity.class);
-                mTopActivity.startActivity(intent);
-                mTopActivity.overridePendingTransition(R.anim.fade, R.anim.alpha);
+                Intent intent = new Intent(mContext, AlarmActivity.class);
+                MainActivity.sharedInstance().startActivity(intent);
+                MainActivity.sharedInstance().overridePendingTransition(R.anim.fade, R.anim.alpha);
 
                 //
                 //moved sound and flashing in here so it would only be kicked off once.
@@ -180,7 +191,7 @@ public class FlowManager implements SerialNoDialogInterface {
 
     @Override
     public void onDismiss(SerialNoDialog dialog) {
-        presentedObject = null;
+        presentedDialog = null;
         if (dialog.getResponse() == 0) {
             WahoooBandManager.sharedManager().disconnect(dialog.getBand());
         }
@@ -188,19 +199,24 @@ public class FlowManager implements SerialNoDialogInterface {
 
     public void startFlashingLED() {
         // If session is successfully setup
-
-        if(isCameraAvailable() && !isFlashing) {
-            isFlashing = true;
-            flashTimer = new Timer();
-            flashTimer.schedule(new TimerTask() {
+        if (MainActivity.sharedInstance() != null) {
+            MainActivity.sharedInstance().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    startFlashing();
+                    if (isCameraAvailable() && !isFlashing) {
+                        isFlashing = true;
+                        flashTimer = new Timer();
+                        flashTimer.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                startFlashing();
+                            }
+                        }, 100, 1000);
+                        //[self.flashLEDSession startRunning];
+                    }
                 }
-            }, 100, 1000);
-            //[self.flashLEDSession startRunning];
+            });
         }
-
     }
 
     public void startFlashing() {
@@ -258,7 +274,7 @@ public class FlowManager implements SerialNoDialogInterface {
         return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
     }
 
-    public void pushDetailForBand(WahoooBand band) {
+    public void pushDetailForBand(final WahoooBand band) {
 
         /*
         if ( self.navigationController )
@@ -274,9 +290,15 @@ public class FlowManager implements SerialNoDialogInterface {
         }
         */
 
-        Intent intent = detailViewForBand(band);
-        mTopActivity.startActivity(intent);
-        mTopActivity.overridePendingTransition(R.anim.right_in, R.anim.left_out);
+        MainActivity.sharedInstance().runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = detailViewForBand(band);
+                        MainActivity.sharedInstance().startActivity(intent);
+                        MainActivity.sharedInstance().overridePendingTransition(R.anim.right_in, R.anim.left_out);
+                    }
+                });
     }
 
     public void pushEditDetailForBand(WahoooBand band) {
@@ -298,7 +320,7 @@ public class FlowManager implements SerialNoDialogInterface {
     }
 
     public Intent detailViewForBand(WahoooBand band) {
-        Intent intent = new Intent(mTopActivity, DetailActivity.class);
+        Intent intent = new Intent(mContext, DetailActivity.class);
         _band = band;
         return intent;
     }

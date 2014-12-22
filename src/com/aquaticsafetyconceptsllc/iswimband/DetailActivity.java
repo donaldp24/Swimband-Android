@@ -70,7 +70,13 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
     private int _selectedSegment;
 
+    public static DetailActivity _instance;
+
     private GenericModalAlertDialog genericModalAlertDisplay;
+
+    public static DetailActivity sharedInstance() {
+        return _instance;
+    }
 
     public DetailActivity() {
     }
@@ -114,8 +120,7 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     protected void onStart() {
         super.onStart();
 
-        // set top activity
-        FlowManager.sharedInstance().setTopActivity(this);
+        _instance = this;
     }
 
     @Override
@@ -136,6 +141,13 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
             mStatusMonitor.onPause();
 
         EventBus.getDefault().unregister(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        _instance = null;
     }
 
     public void onEventMainThread(SEvent e) {

@@ -24,6 +24,11 @@ public class AlarmActivity extends BaseActivity {
     protected ArrayList<WahoooBand> bandArrayList;
     protected LeBandListAdapter mLeBandListAdapter;
 
+    private static AlarmActivity _instance;
+    public static AlarmActivity sharedInstance() {
+        return _instance;
+    }
+
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
@@ -59,8 +64,14 @@ public class AlarmActivity extends BaseActivity {
     protected void onStart() {
         super.onStart();
 
-        // set top activity
-        FlowManager.sharedInstance().setTopActivity(this);
+        _instance = this;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        _instance = null;
     }
 
     protected void initVariables() {

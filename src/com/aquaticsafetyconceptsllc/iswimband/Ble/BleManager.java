@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 public class BleManager implements BleScannerListener, BlePeripheralDelegate {
 
+    public static final String TAG = "BleManager";
+
     protected static BleManager _instance = null;
     /*!
      *  \brief Posted when BLEManager receives advertisement from a peripheral.
@@ -147,6 +149,8 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
     }
 
     public boolean isBleEnabled() {
+        if (!isBleAvailable())
+            return false;
         return mBluetoothAdapter.isEnabled();
     }
 
@@ -159,9 +163,16 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
             Integer obj = (Integer)e.object;
             int state = obj.intValue();
 
-            Logger.log(String.format("BleManager : bluetooth state changed : %d", state));
+            Logger.l(TAG, String.format("BleManager : bluetooth state changed : %d", state));
 
             EventBus.getDefault().post(new SEvent(kBLEManagerStateChanged, obj));
+
+            if (state == BluetoothAdapter.STATE_ON) {
+                checkBluetoothAdapter();
+            }
+            else {
+                mBluetoothAdapter = null;
+            }
         }
     }
 

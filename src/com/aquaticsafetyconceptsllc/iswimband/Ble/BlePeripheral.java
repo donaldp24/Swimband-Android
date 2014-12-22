@@ -57,10 +57,14 @@ public class BlePeripheral {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+
+                if (!BleManager.sharedInstance().isBleEnabled()) {
+                    Logger.l(TAG, "Connected to gatt, but bluetooth is not enabled, so ignored this callback, return");
+                    return;
+                }
                 
                 mConnectionState = STATE_CONNECTED;
                 connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
-
 
                 if (delegate != null)
                 	delegate.gattConnected(BlePeripheral.this);
@@ -77,10 +81,8 @@ public class BlePeripheral {
                 }
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                
                 mConnectionState = STATE_DISCONNECTED;
                 connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
-
 
                 Logger.l(TAG, "Disconnected from GATT server.");
                 

@@ -6,6 +6,7 @@ import com.aquaticsafetyconceptsllc.iswimband.Utils.Logger;
 import de.greenrobot.event.EventBus;
 
 public class WahoooBand {
+	public static final String TAG = "WahoooBand";
 	public static enum WahoooBandType
 	{
 	    kWahoooBand_None,
@@ -65,7 +66,6 @@ public class WahoooBand {
 	
 	public static final String kWahoooBandDataUpdatedNotification = "kWahoooBandDataUpdatedNotification";
 	public static final String kWahoooBandAlertNotification = "kWahoooBandAlertNotification";
-	public static final String kWahoooBandKey = "kWahoooBandKey";
 
 	public static final float kOORRSSIValue = -94.f;
 	public static final int   kMedianRSSIEntryCount = 5;
@@ -88,9 +88,12 @@ public class WahoooBand {
 			return this.value;
 		}
 	}
-
 	public static int WAHOOBAND_DEFAULT_ALERT_TIME = 20;
-	public static int WAHOOBAND_DEFAULT_WARNING_TIME = 10;
+
+	// commented on 2014-12-20, Paul Newcomb required to allow only "immediate" for warningTime
+	//public static int WAHOOBAND_DEFAULT_WARNING_TIME = 20;
+	public static int WAHOOBAND_DEFAULT_WARNING_TIME = WAHOOBAND_DEFAULT_ALERT_TIME;
+
 	public static int WAHOOBAND_NONSWIMMER_ALERT_TIME = 5; //(3)
 	
 	
@@ -112,11 +115,7 @@ public class WahoooBand {
     
     public WahoooBand() {
 		_alertTime = WAHOOBAND_DEFAULT_ALERT_TIME;
-
-		// commented on 2014-12-20, Paul Newcomb required to allow only "immediate" for warningTime
-		//_warningTime = WAHOOBAND_DEFAULT_WARNING_TIME;
-
-		_warningTime = _alertTime;
+		_warningTime = WAHOOBAND_DEFAULT_WARNING_TIME;
 
 		_bandState = WahoooBandState_t.kWahoooBandState_NotConnected;
 
@@ -249,7 +248,7 @@ public class WahoooBand {
 	    
 	    if( _bandState != WahoooBandState_t.kWahoooBandState_OutOfRange )
 	    {
-			Logger.log("WahoooBand.panicAlert() - bandState - kWahoooBandState_Alarm");
+			Logger.l(TAG, "WahoooBand.panicAlert() - bandState - kWahoooBandState_Alarm");
 	        _bandState = WahoooBandState_t.kWahoooBandState_Alarm;
 	    }
 	    
@@ -267,6 +266,7 @@ public class WahoooBand {
 	    }
 
 
+		Logger.l(TAG, "panicAler : post alert notification with EventBus");
 	    EventBus.getDefault().post(new SEvent(kWahoooBandAlertNotification, this));
 	    EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
 	}
