@@ -13,4 +13,6 @@ public interface BlePeripheralDelegate {
     public void gattServicesDiscovered(BlePeripheral peripheral);
     public void gattDataAvailable(BlePeripheral peripheral, BluetoothGattCharacteristic characteristic, byte[] value);
     public void gattReadRemoteRssi(BlePeripheral peripheral, int rssi);
+    public void gattForceDisconnected(BlePeripheral peripheral);
+    public void gattConnectedForceDisconnected(BlePeripheral peripheral);
 }

@@ -59,6 +59,9 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
      */
     public static final String kBLEManagerDisconnectedPeripheralNotification = "blemanager disconnected peripheral notification";
 
+    public static final String kBLEManagerForceDisconnectedPeripheralNotification = "blemanager force disconnected peripheral notification";
+    public static final String kBLEManagerConnectedForcedDisconnectedPeripheralNotification = "blemanager connected forced disconnected peripheral notification";
+
     /*!
      *  \brief Posted when BLEPeripheral fails to connect
      *
@@ -209,8 +212,9 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
 
             if (existPeripheral != null) {
                 existPeripheral.scannedTime = currentTime;
+                existPeripheral.setRssi(rssi);
             } else {
-                existPeripheral = new BlePeripheral(mContext, device.getAddress());
+                existPeripheral = new BlePeripheral(mContext, device.getAddress(), rssi);
                 existPeripheral.delegate = this;
                 list.add(existPeripheral);
                 existPeripheral.scannedTime = currentTime;
@@ -340,6 +344,16 @@ public class BleManager implements BleScannerListener, BlePeripheralDelegate {
     @Override
     public void gattReadRemoteRssi(BlePeripheral peripheral, int rssi) {
         EventBus.getDefault().post(new SEvent(kBLEManagerPeripheralRssiUpdated, peripheral));
+    }
+
+    @Override
+    public void gattForceDisconnected(BlePeripheral peripheral) {
+        EventBus.getDefault().post(new SEvent(kBLEManagerForceDisconnectedPeripheralNotification, peripheral));
+    }
+
+    @Override
+    public void gattConnectedForceDisconnected(BlePeripheral peripheral) {
+        EventBus.getDefault().post(new SEvent(kBLEManagerConnectedForcedDisconnectedPeripheralNotification, peripheral));
     }
 
     public static String getLongUuidFromShortUuid(String shortUuid) {

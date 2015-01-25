@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Handler;
+import android.view.SurfaceHolder;
 import android.widget.Toast;
 import com.aquaticsafetyconceptsllc.iswimband.Event.SEvent;
 import com.aquaticsafetyconceptsllc.iswimband.Sound.SoundManager;
@@ -41,6 +42,7 @@ public class FlowManager implements SerialNoDialogInterface {
     private Timer flashTimer;
 
     public Dialog presentedDialog;
+    public boolean isShownAlarmActivity;
 
     public static FlowManager initialize(Context context) {
         if (_instance == null)
@@ -54,6 +56,8 @@ public class FlowManager implements SerialNoDialogInterface {
 
     private FlowManager(Context context) {
         this.mContext = context;
+        isShownAlarmActivity = false;
+        //presentedDialog = null;
 
         EventBus.getDefault().register(this);
     }
@@ -74,7 +78,7 @@ public class FlowManager implements SerialNoDialogInterface {
         Logger.log("FlowManager._requestAuthenticationKey with band(%s)(%s)", band.name(), band.address());
         if ( band != null) {
             if ( presentedDialog == null &&
-                    AlarmActivity.sharedInstance() == null &&
+                    isShownAlarmActivity == false &&
                     DetailActivity.sharedInstance() == null ) {
                 Logger.log("FlowManager._requestAuthenticationKey : presentedObject == null, show dialog");
 
@@ -126,7 +130,7 @@ public class FlowManager implements SerialNoDialogInterface {
 
         if ( band != null ) {
             boolean presentView;
-            if (AlarmActivity.sharedInstance() == null) {
+            if (isShownAlarmActivity == false) {
 
                 presentView = true;
 
@@ -150,6 +154,7 @@ public class FlowManager implements SerialNoDialogInterface {
             }
 
             if( presentView ) {
+                isShownAlarmActivity = true;
                 Intent intent = new Intent(mContext, AlarmActivity.class);
                 MainActivity.sharedInstance().startActivity(intent);
                 MainActivity.sharedInstance().overridePendingTransition(R.anim.fade, R.anim.alpha);
@@ -158,7 +163,7 @@ public class FlowManager implements SerialNoDialogInterface {
                 //moved sound and flashing in here so it would only be kicked off once.
                 SoundManager.sharedInstance().playAlertSound(R.raw.alarm, true, true);
 
-                startFlashingLED();
+                //startFlashingLED();
             }
         }
     }
@@ -197,7 +202,7 @@ public class FlowManager implements SerialNoDialogInterface {
         }
     }
 
-    public void startFlashingLED() {
+    public void startFlashingLED(final SurfaceHolder holder) {
         // If session is successfully setup
         if (MainActivity.sharedInstance() != null) {
             MainActivity.sharedInstance().runOnUiThread(new Runnable() {
@@ -209,9 +214,9 @@ public class FlowManager implements SerialNoDialogInterface {
                         flashTimer.schedule(new TimerTask() {
                             @Override
                             public void run() {
-                                startFlashing();
+                                startFlashing(holder);
                             }
-                        }, 100, 1000);
+                        }, 0, 1000);
                         //[self.flashLEDSession startRunning];
                     }
                 }
@@ -219,13 +224,16 @@ public class FlowManager implements SerialNoDialogInterface {
         }
     }
 
-    public void startFlashing() {
+    public void startFlashing(SurfaceHolder holder) {
 
         try {
 
             if (isFlashing) {
                 if (!isFlashLEDOn) {
                     mCamera = Camera.open();
+                    mCamera.setPreviewDisplay(holder);
+
+                    // turn on LED
                     Camera.Parameters p = mCamera.getParameters();
                     p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
                     mCamera.setParameters(p);
@@ -236,6 +244,11 @@ public class FlowManager implements SerialNoDialogInterface {
                 } else {
 
                     if (mCamera != null) {
+                        // turn off LED
+                        Camera.Parameters params = mCamera.getParameters();
+                        params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                        mCamera.setParameters(params);
+
                         mCamera.stopPreview();
                         mCamera.release();
                         mCamera = null;
@@ -246,23 +259,32 @@ public class FlowManager implements SerialNoDialogInterface {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            if (mCamera != null) {
+                mCamera.release();
+                mCamera = null;
+            }
+            //e.printStackTrace();
         }
     }
 
     public void stopFlashingLED() {
 
-        isFlashing = false;
+        try {
+            isFlashing = false;
 
-        if(flashTimer != null) {
-            flashTimer.cancel(); flashTimer.purge();
-            flashTimer = null;
-        }
+            if (flashTimer != null) {
+                flashTimer.cancel();
+                flashTimer.purge();
+                flashTimer = null;
+            }
 
-        if (mCamera != null) {
-            mCamera.stopPreview();
-            mCamera.release();
-            mCamera = null;
+            if (mCamera != null) {
+                mCamera.stopPreview();
+                mCamera.release();
+                mCamera = null;
+            }
+        } catch (Exception e) {
+            //
         }
 
         //[UIScreen mainScreen].brightness = self.defaultScreenBrightness;

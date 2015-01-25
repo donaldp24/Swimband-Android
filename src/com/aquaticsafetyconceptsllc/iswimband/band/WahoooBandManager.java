@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 public class WahoooBandManager {
 
+	public static final String TAG = "WahoooBandManager";
+
 	public static final int ADVERTISE_TIME_OUT = 20;
 	public static final String UUID_BANDSERVICE = "EBEA0000-473C-48F7-AEBA-3C9CB39C1A31";
 
@@ -133,6 +135,27 @@ public class WahoooBandManager {
 		EventBus.getDefault().post(new SEvent(kBandManagerAdvertisingBandsChangedNotification, this));
 	}
 
+	public void connectForceDisconnectedBand(WahoooBand band)  {
+		if (band == null) {
+			Logger.log("WahoooBandManager - cannot connect band is null");
+			return;
+		}
+		if ( band.type() != WahoooBand.WahoooBandType.kWahoooBand_Peripheral ) {
+			Logger.log("WahoooBandManager - connect : band is not peripheral band");
+			return;
+		}
+
+		PeripheralBand prphBand = (PeripheralBand )band;
+		Logger.log("WahoooBandManager - connect(%s)", prphBand.address());
+		prphBand.peripheral().setForceDisconnected(false);
+
+		Logger.log("WahoooBandManager - advertisingBands.remove(%s)", prphBand.address());
+		advertisingBands.remove(band);
+
+		//[[NSNotificationCenter defaultCenter] postNotificationName:kBandManagerAdvertisingBandsChangedNotification object:self];
+		EventBus.getDefault().post(new SEvent(kBandManagerAdvertisingBandsChangedNotification, this));
+	}
+
 	public void disconnect(WahoooBand band) {
 		Logger.log("WahoooBandManager - disconnect()");
 		if (band.type() != WahoooBand.WahoooBandType.kWahoooBand_Peripheral) {
@@ -222,8 +245,14 @@ public class WahoooBandManager {
 			BlePeripheral peripheral = (BlePeripheral)e.object;
 			_connectedPeripheral(peripheral);
 		} else if (BleManager.kBLEManagerDisconnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
-			BlePeripheral peripheral = (BlePeripheral)e.object;
+			BlePeripheral peripheral = (BlePeripheral) e.object;
 			_disconnectedPeripheral(peripheral);
+		} else if (BleManager.kBLEManagerConnectedForcedDisconnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
+			BlePeripheral peripheral = (BlePeripheral) e.object;
+			_connectedForceDisconnectedPeripheral(peripheral);
+		} else if (BleManager.kBLEManagerForceDisconnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
+			BlePeripheral peripheral = (BlePeripheral)e.object;
+			_forceDisconnectedPeripheral(peripheral);
 		} else if (BleManager.kBLEManagerStateChanged.equalsIgnoreCase(e.name)) {
 			Integer state = (Integer)e.object;
 			_bleManagerStateChanged(state.intValue());
@@ -238,6 +267,7 @@ public class WahoooBandManager {
 
 		PeripheralBand connectedBand = _findConnectedBandForPeripheral(peripheral);
 
+		/*
 		// If the band is in the connected list, reestablish connection
 		if (connectedBand != null) {
 			// Logger.log("peripheral(%s) is in connectedBands - calling connect() function", connectedBand.address());
@@ -245,8 +275,19 @@ public class WahoooBandManager {
 			Logger.log("peripheral(%s) is in connectedBands", connectedBand.address());
 			if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
 				 Logger.log("peripheral(%s) is in connectedBands, but disconnected - try to connect()", connectedBand.address());
-				if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE)
+				if (PeripheralBand.USE_RSSI_THRESHOLD) {
+					if (peripheral.rssi() != 0 && peripheral.prevRssi() != 0 && peripheral.beforeRssi() != 0) {
+						if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+								peripheral.prevRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+								peripheral.beforeRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE) {
+							Logger.l(TAG, "peripheral(%s) is connectedBand, 3 rssis(%d, %d, %d), connecting - try to connect()", peripheral.address(), peripheral.rssi(), peripheral.prevRssi(), peripheral.beforeRssi());
+							connect(connectedBand);
+						}
+					}
+				}
+				else {
 					connect(connectedBand);
+				}
 			}
 			return;
 		}
@@ -259,8 +300,20 @@ public class WahoooBandManager {
 				Logger.log("band(%s) already exist in connectingBands", peripheral.address());
 				if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
 					 Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", peripheral.address());
-					if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE)
+					if (PeripheralBand.USE_RSSI_THRESHOLD) {
+						if (peripheral.rssi() != 0 && peripheral.prevRssi() != 0 && peripheral.beforeRssi() != 0) {
+							if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+									peripheral.prevRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+									peripheral.beforeRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE
+									) {
+								Logger.l(TAG, "peripheral(%s) is in connectingBands, 3 rssis(%d, %d, %d), connecting - try to connect()", peripheral.address(), peripheral.rssi(), peripheral.prevRssi(), peripheral.beforeRssi());
+								connect(connectedBand);
+							}
+						}
+					}
+					else {
 						connect(connectedBand);
+					}
 				}
 				return;
 			}
@@ -270,6 +323,70 @@ public class WahoooBandManager {
 			PeripheralBand peripheralBand = (PeripheralBand) band;
 			if (peripheralBand.peripheral().address().equalsIgnoreCase(peripheral.address())) {
 				 Logger.log("WahoooBandManager - _discoveredPeripheral : band(%s) already exist in advertisingBands", peripheral.address());
+				return;
+			}
+		}
+
+		if (PeripheralBand.USE_RSSI_THRESHOLD) {
+			if (peripheral.rssi() != 0 && peripheral.prevRssi() != 0 && peripheral.beforeRssi() != 0) {
+				if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+						peripheral.prevRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+						peripheral.beforeRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE
+						) {
+					// accept this peripheral
+				}
+				else
+					return;
+			}
+			else
+				return;
+		}
+		*/
+		// If the band is in the connected list, reestablish connection
+		if (connectedBand != null) {
+			// Logger.log("peripheral(%s) is in connectedBands - calling connect() function", connectedBand.address());
+			// connect(connectedBand);
+			Logger.log("peripheral(%s) is in connectedBands", connectedBand.address());
+			if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
+				Logger.log("peripheral(%s) is in connectedBands, but disconnected - try to connect()", connectedBand.address());
+				connect(connectedBand);
+			}
+			else if (PeripheralBand.USE_RSSI_THRESHOLD) {
+				 if (peripheral.connectionState() == BlePeripheral.STATE_CONNECTED &&
+						peripheral.isForceDisconnected()) {
+					// check rssi value
+					if (peripheral.rssi() != 0 && peripheral.prevRssi() != 0 && peripheral.beforeRssi() != 0) {
+						if (peripheral.rssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+								peripheral.prevRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE &&
+								peripheral.beforeRssi() > PeripheralBand.RSSI_THRESHOLD + PeripheralBand.RSSI_TOLERANCE
+								) {
+							Logger.l(TAG, "peripheral(%s) is in connectingBands, 3 rssis(%d, %d, %d), connecting - try to connect()", peripheral.address(), peripheral.rssi(), peripheral.prevRssi(), peripheral.beforeRssi());
+							connectForceDisconnectedBand(connectedBand);
+						}
+					}
+				}
+			}
+			return;
+		}
+
+		for (WahoooBand band : connectingBands) {
+			PeripheralBand peripheralBand = (PeripheralBand) band;
+			if (peripheralBand.peripheral().address().equalsIgnoreCase(peripheral.address())) {
+				//Logger.log("band(%s) already exist in connectingBands - calling connect() function", peripheral.address());
+				//connect(peripheralBand);
+				Logger.log("band(%s) already exist in connectingBands", peripheral.address());
+				if (peripheral.connectionState() == BlePeripheral.STATE_DISCONNECTED) {
+					Logger.log("peripheral(%s) is in connectingBands, but disconnected - try to connect()", peripheral.address());
+					connect(connectedBand);
+				}
+				return;
+			}
+		}
+
+		for (WahoooBand band : advertisingBands) {
+			PeripheralBand peripheralBand = (PeripheralBand) band;
+			if (peripheralBand.peripheral().address().equalsIgnoreCase(peripheral.address())) {
+				Logger.log("WahoooBandManager - _discoveredPeripheral : band(%s) already exist in advertisingBands", peripheral.address());
 				return;
 			}
 		}
@@ -330,19 +447,23 @@ public class WahoooBandManager {
 		else
 		{
 			Logger.log("_connectedPeripheral (%s) (%s) is not in connectingBands", peripheral.address(), peripheral.name());
+			boolean isExist = false;
 			for( WahoooBand band : connectedBands )
 			{
 				PeripheralBand peripheralBand = (PeripheralBand)band;
 				if( peripheralBand.peripheral().address().equalsIgnoreCase(peripheral.address()) )
 				{
 					Logger.log("_connectedPeripheral (%s) (%s) is in connectedBands - return without any processing", peripheral.address(), peripheral.name());
-					return;
+					isExist = true;
+					break;
 				}
 			}
 
-			Logger.log("_connectedPeripheral (%s) (%s) - create new PeripheralBand (not in connectedBands & connectingBands)", peripheral.address(), peripheral.name());
-			connectedBand = new PeripheralBand();
-			connectedBand.setPeripheral(peripheral);
+			if (!isExist) {
+				Logger.log("_connectedPeripheral (%s) (%s) - create new PeripheralBand (not in connectedBands & connectingBands)", peripheral.address(), peripheral.name());
+				connectedBand = new PeripheralBand();
+				connectedBand.setPeripheral(peripheral);
+			}
 		}
 
 		if ( !connectedBands.contains(connectedBand) )
@@ -396,6 +517,21 @@ public class WahoooBandManager {
 			}
 
 			//[self _retrieveConnectedBands];
+		}
+	}
+
+	protected void _connectedForceDisconnectedPeripheral(BlePeripheral peripheral) {
+		buildConnectedBandsDisplay();
+
+		//[[NSNotificationCenter defaultCenter] postNotificationName:kBandManagerConnectedBandsChangedNotification object:self];
+		EventBus.getDefault().post(new SEvent(kBandManagerConnectedBandsChangedNotification, this));
+	}
+
+	protected void _forceDisconnectedPeripheral(BlePeripheral peripheral) {
+
+		Logger.log("_forceDisconnectedPeripheral (%s) (%s)", peripheral.address(), peripheral.name());
+		if ( peripheral != null ) {
+			//
 		}
 	}
 

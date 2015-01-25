@@ -40,8 +40,10 @@ public class PeripheralBand extends WahoooBand {
 
     private static final int READCHARACTERISTIC_INTERVAL = 100;
 
-    public static final int RSSI_THRESHOLD = -90;
-    public static final int RSSI_TOLERANCE = 35;
+    // threshold
+    public static final int RSSI_THRESHOLD = -88;
+    public static final int RSSI_TOLERANCE = 15;
+    public static final boolean USE_RSSI_THRESHOLD = true;
 
 
 	public static final String kPeripheralBandRequestingAuthenticationNotification = "kPeripheralBandRequestingAuthenticationNotification";
@@ -441,7 +443,11 @@ public class PeripheralBand extends WahoooBand {
         if (BleManager.kBLEManagerConnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
             _blePeripheralConnected((BlePeripheral)e.object);
         } else if (BleManager.kBLEManagerDisconnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
-            _blePeripheralDisconnected((BlePeripheral)e.object);
+            _blePeripheralDisconnected((BlePeripheral) e.object);
+        } else if (BleManager.kBLEManagerConnectedForcedDisconnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
+            _blePeripheralConnectedForceDisconnected((BlePeripheral) e.object);
+        } else if (BleManager.kBLEManagerForceDisconnectedPeripheralNotification.equalsIgnoreCase(e.name)) {
+            _blePeripheralForceDisconnected((BlePeripheral) e.object);
         } else if (BleManager.kBLEManagerPeripheralServiceDiscovered.equalsIgnoreCase(e.name)) {
             _retrieveCharacteristics((BlePeripheral)e.object);
         } else if (BleManager.kBLEManagerPeripheralDataAvailable.equalsIgnoreCase(e.name)) {
@@ -624,6 +630,8 @@ public class PeripheralBand extends WahoooBand {
             //[[NSNotificationCenter defaultCenter] postNotificationName:kWahoooBandDataUpdatedNotification object:self];
             EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
 
+            _rssiHistory.clear();
+
             if( _updateSignalTimer != null )
             {
                 _updateSignalTimer.cancel(); _updateSignalTimer.purge();
@@ -721,6 +729,143 @@ public class PeripheralBand extends WahoooBand {
     protected void _blePeripheralDisconnected(BlePeripheral peripheral) {
         _peripheralDisconnected(peripheral);
     }
+
+
+
+    protected void _blePeripheralConnectedForceDisconnected(BlePeripheral peripheral) {
+        _peripheralConnectedForceDisconnected(peripheral);
+    }
+
+    protected void _peripheralConnectedForceDisconnected(BlePeripheral peripheral) {
+        Logger.log("PeripheralBand._peripheralConnectedForceDisconnected - peripheral(%s)(%s)", peripheral.address(), peripheral.name());
+
+        if ( peripheral == _peripheral ) {
+            //_restoredFromPeripheral = false;
+
+            //_fwVersion = null;
+
+
+            //if( _bandState == WahoooBandState_t.kWahoooBandState_NotConnected ) {
+            //    _bandState = WahoooBandState_t.kWahoooBandState_Connecting;
+            //}
+
+            _bandState = WahoooBandState_t.kWahoooBandState_Connected;
+
+            _perphState = PeripheralBandState.kPeripheralBandState_Ready;
+
+            //_bandID = _peripheral.address();
+
+            //_loadStoredBandData();
+
+            /*
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    _updateValues();
+                }
+            }, (int)(UPDATE_DELAY * TimeUnit.SECONDS.toMillis(1)));
+            */
+
+            //[[NSNotificationCenter defaultCenter] postNotificationName:kWahoooBandDataUpdatedNotification object:self];
+            EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
+
+            _rssiHistory.clear();
+
+            if( _updateSignalTimer != null )
+            {
+                _updateSignalTimer.cancel(); _updateSignalTimer.purge();
+
+                _updateSignalTimer = null;
+            }
+
+            _updateSignalTimer = new Timer();
+            _updateSignalTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    _rssiTimer();
+                }
+            }, 100, 1000);
+        }
+        else {
+            Logger.log("PeripheralBand._peripheralConnectedForceDisconnected - peripheral(%s)(%s) is not equal band.peripheral", peripheral.address(), peripheral.name());
+        }
+    }
+
+    protected void _blePeripheralForceDisconnected(BlePeripheral peripheral) {
+        _peripheralForceDisconnected(peripheral);
+    }
+
+    protected void _peripheralForceDisconnected(BlePeripheral peripheral) {
+        if ( peripheral == _peripheral ) {
+            _restoredFromPeripheral = false;
+            _disconnectTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+
+            _bandData.disconnectTime = (double)_disconnectTime;
+            CoreDataManager.sharedInstance().saveSwimbandData(_bandData);
+
+            int alertDelay = _getAlertDelay();
+            int warningDelay = _getWarningDelay();
+
+            Logger.l(TAG, "PeripheralBand._peripheralForceDisconnected : alertDelay : %d, warningDelay : %d", alertDelay, warningDelay);
+
+            //_iDevicesService.peripheral = nil;
+
+            _perphState = PeripheralBandState.kPeripheralBandState_Disconnected;
+
+            if ( _bandState == WahoooBandState_t.kWahoooBandState_Connecting &&
+                    _perphState.getValue() <= PeripheralBandState.kPeripheralBandState_Authenticating.getValue() ) {
+                Logger.log("PeripheralBand._peripheralDisconnected - status < authenticating, so disconnect it & return");
+                WahoooBandManager.sharedManager().disconnect(this);
+                return;
+            }
+            else if ( _bandState == WahoooBandState_t.kWahoooBandState_Connected )
+            {
+                {
+                    if ( alertDelay > 0 )
+                    {
+                        if ( warningDelay > 0 )
+                        {
+
+                        }
+                        else
+                        {
+                            _bandState = WahoooBandState_t.kWahoooBandState_Caution;
+                        }
+
+                        _setupAlertTimer();
+                        _scheduleLocalNotification();
+                    }
+                    else
+                    {
+                        _bandState = WahoooBandState_t.kWahoooBandState_Alarm;
+                        panicAlert();
+                    }
+                }
+
+            }
+            else if ( _bandState == WahoooBandState_t.kWahoooBandState_OTAUpgrade)
+            {
+                _bandState = WahoooBandState_t.kWahoooBandState_NotConnected;
+            }
+
+            /*
+            if ( _updateSignalTimer != null )
+            {
+                _updateSignalTimer.cancel(); _updateSignalTimer.purge();
+
+                _updateSignalTimer = null;
+            }
+            */
+
+            //[[NSNotificationCenter defaultCenter] postNotificationName:kWahoooBandDataUpdatedNotification object:self];
+            EventBus.getDefault().post(new SEvent(kWahoooBandDataUpdatedNotification, this));
+        }
+        else {
+            Logger.log("_peripheralDisconnected , _peripheral(%s) is not equal (%s)", _peripheral.address(), peripheral.address());
+        }
+    }
+
 
     protected void _retrieveCharacteristics(BlePeripheral peripheral) {
         if (_peripheral != peripheral) {
@@ -925,17 +1070,26 @@ public class PeripheralBand extends WahoooBand {
             entry.timeStamp = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
 
             _rssiHistory.add(0, entry);
-            if (entry.value < RSSI_THRESHOLD &&
-                    _rssiHistory.size() > 2 &&
-                    _rssiHistory.get(1).value < RSSI_THRESHOLD &&
-                    _rssiHistory.get(2).value < RSSI_THRESHOLD) {
+            if (USE_RSSI_THRESHOLD) {
+                if (!_peripheral.isForceDisconnected()) {
+                    if (entry.value < RSSI_THRESHOLD &&
+                            _rssiHistory.size() > 2 &&
+                            _rssiHistory.get(1).value < RSSI_THRESHOLD &&
+                            _rssiHistory.get(2).value < RSSI_THRESHOLD) {
 
-                    Logger.l(TAG, "rssi(%d) is low (3 times), forcely disconnecting....", entry.value);
-                    // this is disconnected state, forcely close connection
-                    _peripheral.disconnect();
-            }
-            else {
-                //
+                        Logger.l(TAG, "rssi(%d) is low (3 times), forcely disconnecting....", entry.value);
+                        // this is disconnected state, forcely close connection
+                        _peripheral.setForceDisconnected(true);
+                    }
+                }
+                else {
+                    if (_rssi != 0 && _peripheral.prevRssi() != 0 && _peripheral.beforeRssi() != 0 &&
+                            _rssi > RSSI_THRESHOLD + RSSI_TOLERANCE &&
+                            _peripheral.prevRssi() > RSSI_THRESHOLD + RSSI_TOLERANCE &&
+                            _peripheral.beforeRssi() > RSSI_THRESHOLD + RSSI_TOLERANCE) {
+                        _peripheral.setForceDisconnected(false);
+                    }
+                }
             }
 
             _calcuateRSSIVelocity();

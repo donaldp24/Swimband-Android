@@ -26,13 +26,17 @@ public class BlePeripheral {
     private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
+    private boolean isForceDisconnected = false;
     private BluetoothDevice mBluetoothDevice;
+    private int _prevRssi;
     private int _rssi;
+    private int _beforeRssi;
     public long scannedTime;
     
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTING = 1;
     public static final int STATE_CONNECTED = 2;
+
 
     public static final int CONNECTION_TIMEOUT = 20;
     public static final int DISCOVER_TIMEOUT = 20;
@@ -56,6 +60,8 @@ public class BlePeripheral {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+
+
             if (newState == BluetoothProfile.STATE_CONNECTED) {
 
                 if (!BleManager.sharedInstance().isBleEnabled()) {
@@ -81,6 +87,11 @@ public class BlePeripheral {
                 }
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+
+                _prevRssi = 0;
+                _beforeRssi = 0;
+                _rssi = 0;
+
                 mConnectionState = STATE_DISCONNECTED;
                 connectionTimeoutHandler.removeCallbacks(connectionTimeoutRunnable);
 
@@ -123,16 +134,20 @@ public class BlePeripheral {
 
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
-            _rssi = rssi;
+            setRssi(rssi);
             if (delegate != null)
                 delegate.gattReadRemoteRssi(BlePeripheral.this, rssi);
         }
     };
     
-    public BlePeripheral(Context context, String address) {
+    public BlePeripheral(Context context, String address, int rssi) {
         this.mContext = context;
         this.mBluetoothDevice = null;
     	this.mAddress = address;
+
+        this._beforeRssi = 0;
+        this._rssi = rssi;
+        this._prevRssi = 0;
 
         this.scannedTime = System.currentTimeMillis();
 
@@ -216,7 +231,7 @@ public class BlePeripheral {
         // We want to directly connect to the device, so we are setting the autoConnect
         // parameter to false.
         mBluetoothGatt = device.connectGatt(mContext, false, mGattCallback);
-        Logger.log("Trying to create a new connection.");
+        Logger.l(TAG, "Trying to create a new connection.");
         mBluetoothDeviceAddress = mAddress;
         mConnectionState = STATE_CONNECTING;
 
@@ -242,6 +257,26 @@ public class BlePeripheral {
         }
         mBluetoothGatt.disconnect();
     }
+
+    public void setForceDisconnected(boolean forceDisconnected) {
+        isForceDisconnected = forceDisconnected;
+
+        if (isForceDisconnected) {
+            if (delegate != null) {
+                delegate.gattForceDisconnected(this);
+            }
+        }
+        else {
+            if (delegate != null) {
+                delegate.gattConnectedForceDisconnected(this);
+            }
+        }
+    }
+
+    public boolean isForceDisconnected() {
+        return isForceDisconnected;
+    }
+
 
     /**
      * After using a given BLE device, the app must call this method to ensure resources are
@@ -325,6 +360,20 @@ public class BlePeripheral {
 
     public int rssi() {
         return _rssi;
+    }
+
+    public int prevRssi() {
+        return _prevRssi;
+    }
+
+    public int beforeRssi() {
+        return _beforeRssi;
+    }
+
+    public void setRssi(int rssi) {
+        _beforeRssi = _prevRssi;
+        _prevRssi = _rssi;
+        _rssi = rssi;
     }
 
     public void updateRSSI() {

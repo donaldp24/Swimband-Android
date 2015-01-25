@@ -15,7 +15,7 @@ public class Logger {
 		android.util.Log.w(TAG + ":" + tag, logstring);
 
 		logstring = tag + " " + logstring;
-		Crittercism.leaveBreadcrumb(logstring);
+		//Crittercism.leaveBreadcrumb(logstring);
 	}
 	
 	public static void logError(String tag, String format, Object ...args) {
@@ -23,6 +23,6 @@ public class Logger {
 		android.util.Log.e(TAG + ":" + tag, logstring);
 
 		logstring = tag + " " + logstring;
-		Crittercism.leaveBreadcrumb(logstring);
+		//Crittercism.leaveBreadcrumb(logstring);
 	}
 }

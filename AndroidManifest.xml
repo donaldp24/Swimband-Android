@@ -29,8 +29,8 @@
 
     <!-- Allows access to the flashlight -->
     <permission android:name="android.permission.FLASHLIGHT"
-                android:permissionGroup="android.permission-group.HARDWARE_CONTROLS"
-                android:protectionLevel="normal"
+
+
                 android:label="@string/permlab_flashlight"
                 android:description="@string/permdesc_flashlight" />
 

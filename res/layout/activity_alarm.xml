@@ -33,4 +33,9 @@
             android:padding="0dp"
             android:layout_centerHorizontal="true"/>
 
+    <SurfaceView
+            android:id="@+id/PREVIEW"
+            android:layout_width="1dip"
+            android:layout_height="1dip"/>
+
 </RelativeLayout>

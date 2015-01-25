@@ -2,6 +2,8 @@ package com.aquaticsafetyconceptsllc.iswimband;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -17,12 +19,15 @@ import java.util.ArrayList;
 /**
  * Created by donaldpae on 11/29/14.
  */
-public class AlarmActivity extends BaseActivity {
+public class AlarmActivity extends BaseActivity implements SurfaceHolder.Callback {
     protected ListView mBandListView;
     protected ViewGroup mStatusContainer;
     protected StatusMonitor mStatusMonitor;
     protected ArrayList<WahoooBand> bandArrayList;
     protected LeBandListAdapter mLeBandListAdapter;
+
+    SurfaceView mPreview;
+    SurfaceHolder mHolder;
 
     private static AlarmActivity _instance;
     public static AlarmActivity sharedInstance() {
@@ -58,6 +63,10 @@ public class AlarmActivity extends BaseActivity {
                 dismiss();
             }
         });
+
+        SurfaceView preview = (SurfaceView) findViewById(R.id.PREVIEW);
+        SurfaceHolder mHolder = preview.getHolder();
+        mHolder.addCallback(this);
     }
 
     @Override
@@ -144,6 +153,7 @@ public class AlarmActivity extends BaseActivity {
     }
 
     public void dismiss() {
+        FlowManager.sharedInstance().isShownAlarmActivity = false;
         // Req#13. During Red Alert, siren must continue playing until iSwimband reconnects or Dismiss button is pushed by user
         // Stop the alert sound when user dismisses the alarm view
         SoundManager.sharedInstance().stopAlertSound();;
@@ -156,5 +166,20 @@ public class AlarmActivity extends BaseActivity {
 
         finish();
         overridePendingTransition(R.anim.fade, R.anim.alpha);
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        mHolder = holder;
+        FlowManager.sharedInstance().startFlashingLED(holder);
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        mHolder = null;
     }
 }
